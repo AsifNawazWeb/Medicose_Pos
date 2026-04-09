@@ -1,0 +1,33 @@
+<div class="wrap">
+  <mat-card class="card surface" role="region" aria-label="Login form">
+    <mat-card-header>
+      <mat-card-title>Welcome back</mat-card-title>
+      <mat-card-subtitle>Sign in to continue</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" autocomplete="username" required />
+          <mat-error *ngIf="form.controls.email.invalid">Enter a valid email</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Password</mat-label>
+          <input matInput type="password" formControlName="password" autocomplete="current-password" required />
+          <mat-error *ngIf="form.controls.password.invalid">Password is required</mat-error>
+        </mat-form-field>
+
+        <button mat-raised-button color="primary" class="full" [disabled]="loading || form.invalid">
+          <mat-icon>login</mat-icon>
+          <span>Sign in</span>
+        </button>
+      </form>
+
+      <div class="row">
+        <a routerLink="/auth/register">Create account</a>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

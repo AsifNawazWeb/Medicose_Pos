@@ -1,0 +1,363 @@
+<app-page-header title="Sales History" subtitle="View all transactions and invoices">
+  <button mat-raised-button color="primary" (click)="exportCSV()">
+    <mat-icon>download</mat-icon>
+    Export CSV
+  </button>
+</app-page-header>
+
+<mat-card class="sales-card">
+  <mat-card-header>
+    <mat-card-title>
+      <mat-icon>receipt_long</mat-icon>
+      Transaction History
+    </mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <!-- Filters Section -->
+    <div class="filters-section">
+      <mat-form-field appearance="outline" class="date-field">
+        <mat-label>From</mat-label>
+        <input matInput [matDatepicker]="fromPicker" [(ngModel)]="from" (dateChange)="load()">
+        <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+        <mat-datepicker #fromPicker></mat-datepicker>
+        <mat-icon matPrefix>calendar_today</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="date-field">
+        <mat-label>To</mat-label>
+        <input matInput [matDatepicker]="toPicker" [(ngModel)]="to" (dateChange)="load()">
+        <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+        <mat-datepicker #toPicker></mat-datepicker>
+        <mat-icon matPrefix>calendar_today</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="payment-filter">
+        <mat-label>All Payments</mat-label>
+        <mat-select [(ngModel)]="paymentFilter" (selectionChange)="filterByPayment()">
+          <mat-option value="">All Payments</mat-option>
+          <mat-option value="CASH">Cash</mat-option>
+          <mat-option value="CARD">Card</mat-option>
+          <mat-option value="UPI">UPI</mat-option>
+          <mat-option value="MIXED">Mixed</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button mat-raised-button color="primary" (click)="load()" class="search-btn">
+        <mat-icon>search</mat-icon>
+        Search
+      </button>
+    </div>
+
+    <!-- Sales Table -->
+    <div class="sales-table-wrapper" *ngIf="filteredRows.length > 0; else noSales">
+      <table mat-table [dataSource]="filteredRows" class="sales-table mat-elevation-z0">
+
+        <!-- Bill Number Column -->
+        <ng-container matColumnDef="billNo">
+          <th mat-header-cell *matHeaderCellDef>BILL NO</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="bill-number">#{{ row.invoiceNo }}</div>
+          </td>
+        </ng-container>
+
+        <!-- Date & Time Column -->
+        <ng-container matColumnDef="dateTime">
+          <th mat-header-cell *matHeaderCellDef>DATE & TIME</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="date-time">{{ row.createdAt | date:'dd/MM/yyyy, h:mm a' }}</div>
+          </td>
+        </ng-container>
+
+        <!-- Customer Column -->
+        <ng-container matColumnDef="customer">
+          <th mat-header-cell *matHeaderCellDef>CUSTOMER</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="customer-info">
+              <div class="customer-name">{{ row.customerName || 'Walk-in' }}</div>
+              <div class="customer-note" *ngIf="row.customerPhone">{{ row.customerPhone }}</div>
+              <div class="customer-note" *ngIf="!row.customerName && !row.customerPhone">N/A</div>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Items Column -->
+        <ng-container matColumnDef="items">
+          <th mat-header-cell *matHeaderCellDef>ITEMS</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="items-count">{{ row.totalItems || 0 }} items</span>
+          </td>
+        </ng-container>
+
+        <!-- Amount Column -->
+        <ng-container matColumnDef="amount">
+          <th mat-header-cell *matHeaderCellDef>AMOUNT</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="amount">Rs. {{ row.grandTotal | number:'1.2-2' }}</div>
+          </td>
+        </ng-container>
+
+        <!-- Payment Column -->
+        <ng-container matColumnDef="payment">
+          <th mat-header-cell *matHeaderCellDef>PAYMENT</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="payment-badge" [ngClass]="getPaymentClass(row.paymentMethod)">
+              {{ row.paymentMethod || 'CASH' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>ACTIONS</th>
+          <td mat-cell *matCellDef="let row">
+            <button mat-raised-button color="primary" (click)="open(row)" class="view-btn">
+              View
+            </button>
+            <button mat-icon-button color="accent" (click)="openEdit(row); $event.stopPropagation()" matTooltip="Edit Bill">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="basic" *ngIf="row.customerId"
+              (click)="openLedger(row.customerId); $event.stopPropagation()" matTooltip="Customer Ledger">
+              <mat-icon>account_balance_wallet</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" [class.selected-row]="selected?.id === row.id"
+          (click)="open(row)">
+        </tr>
+      </table>
+    </div>
+
+    <ng-template #noSales>
+      <div class="empty-sales">
+        <mat-icon>receipt_long</mat-icon>
+        <h3>No transactions found</h3>
+        <p>Try adjusting your filters or create a new sale from POS</p>
+      </div>
+    </ng-template>
+  </mat-card-content>
+</mat-card>
+
+<!-- Invoice Details Dialog -->
+<ng-template #invoiceDialog>
+  <h2 mat-dialog-title>Invoice Details</h2>
+  <mat-dialog-content *ngIf="selected">
+    <div class="invoice-header">
+      <div class="invoice-info">
+        <div class="invoice-number">Invoice #{{ selected.invoiceNo }}</div>
+        <div class="invoice-date">{{ selected.createdAt | date:'dd MMMM yyyy, h:mm a' }}</div>
+      </div>
+      <div class="invoice-status">
+        <span class="status-badge status-paid">PAID</span>
+      </div>
+    </div>
+
+    <div class="customer-details" *ngIf="selected.customerName || selected.customerPhone">
+      <div class="detail-label">Customer Details</div>
+      <div class="detail-content">
+        <div *ngIf="selected.customerName"><strong>Name:</strong> {{ selected.customerName }}</div>
+        <div *ngIf="selected.customerPhone"><strong>Phone:</strong> {{ selected.customerPhone }}</div>
+      </div>
+    </div>
+
+    <div class="items-section">
+      <div class="section-title">Items</div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>Item Name</th>
+            <th class="text-center">Qty</th>
+            <th class="text-center">Price</th>
+            <th class="text-center">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of selected.items">
+            <td>{{ item.productName }}</td>
+            <td class="text-center">{{ item.qty }}</td>
+            <td class="text-center">Rs. {{ item.price | number:'1.2-2' }}</td>
+            <td class="text-center">Rs. {{ item.lineTotal | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="totals-section">
+      <div class="total-row">
+        <span>Subtotal:</span>
+        <span>Rs. {{ selected.subTotal | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-row">
+        <span>GST:</span>
+        <span>Rs. {{ selected.gstTotal | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-row" *ngIf="selected.discount > 0">
+        <span>Item Discounts:</span>
+        <span class="discount">-Rs. {{ selected.discount | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-row" *ngIf="selected.billDiscount > 0">
+        <span>Bill Discount:</span>
+        <span class="discount">-Rs. {{ selected.billDiscount | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-row grand-total">
+        <span>Grand Total:</span>
+        <span>Rs. {{ selected.grandTotal | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-row" *ngIf="selected.amountPaid !== undefined">
+        <span>Amount Paid:</span>
+        <span>Rs. {{ selected.amountPaid | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-row text-danger" *ngIf="selected.balanceDue > 0">
+        <span>Balance Due (Credit):</span>
+        <span>Rs. {{ selected.balanceDue | number:'1.2-2' }}</span>
+      </div>
+    </div>
+  </mat-dialog-content>
+  <mat-dialog-actions>
+    <button mat-stroked-button mat-dialog-close>Close</button>
+    <button mat-raised-button color="primary" (click)="openWhatsappDialog()">
+      <mat-icon>call</mat-icon>
+      whatsapp
+    </button>
+    <button mat-raised-button color="primary" (click)="print()">
+      <mat-icon>print</mat-icon>
+      Print Receipt
+    </button>
+  </mat-dialog-actions>
+</ng-template>
+
+
+<ng-template #whatsappDialog>
+  <h2 mat-dialog-title>Send WhatsApp</h2>
+
+  <mat-dialog-content style="padding-top: 8px; padding-bottom: 2px;">
+    <mat-form-field appearance="outline" style="width:100%">
+      <mat-label>Phone Number</mat-label>
+      <input type="number" matInput [(ngModel)]="whatsappPhone" placeholder="e.g. 923001234567">
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Cancel</button>
+
+    <button mat-raised-button color="primary" (click)="sendWhatsapp()">
+      <mat-icon>send</mat-icon>
+      Send
+    </button>
+  </mat-dialog-actions>
+</ng-template>
+
+<!-- ─── Edit Bill Dialog ─────────────────────────────────────────────────── -->
+<ng-template #editDialog>
+  <h2 mat-dialog-title>
+    <mat-icon style="vertical-align:middle;margin-right:6px">edit</mat-icon>
+    Edit Bill — {{ selected?.invoiceNo }}
+  </h2>
+  <mat-dialog-content style="min-width:500px;max-height:80vh;overflow-y:auto">
+    <p class="edit-warning">
+      <mat-icon style="font-size:16px;vertical-align:middle">warning</mat-icon>
+      Changes will recalculate totals and update inventory automatically.
+    </p>
+    <table class="items-table edit-items-table">
+      <thead>
+        <tr>
+          <th>Item</th><th>Qty</th><th>Price</th><th>Disc%</th><th>Total</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let it of editItems; let i=index">
+          <td>{{ it.productName }}</td>
+          <td>
+            <input type="number" class="edit-input" [(ngModel)]="it.qty" min="0"
+              (ngModelChange)="editTotals()" style="width:60px" />
+          </td>
+          <td>Rs. {{ it.price | number:'1.2-2' }}</td>
+          <td>
+            <input type="number" class="edit-input" [(ngModel)]="it.productDiscount" min="0" max="100"
+              (ngModelChange)="editTotals()" style="width:55px" />%
+          </td>
+          <td>Rs. {{ (it.price * it.qty * (1 - (it.productDiscount||0)/100)) | number:'1.2-2' }}</td>
+          <td>
+            <button mat-icon-button color="warn" (click)="removeEditItem(i)" matTooltip="Remove item">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="edit-totals">
+      <div class="total-row">
+        <span>Subtotal:</span>
+        <strong>Rs. {{ editTotals().sub | number:'1.2-2' }}</strong>
+      </div>
+      <div class="total-row" *ngIf="editTotals().disc > 0">
+        <span>Item Discounts:</span>
+        <strong class="text-danger">-Rs. {{ editTotals().disc | number:'1.2-2' }}</strong>
+      </div>
+      <div class="total-row">
+        <span>Bill Discount %:</span>
+        <input type="number" class="edit-input" [formControl]="editBillDiscount" min="0" max="100" style="width:60px" />%
+        <strong *ngIf="editTotals().bdAmt > 0" class="text-danger">(-Rs. {{ editTotals().bdAmt | number:'1.2-2' }})</strong>
+      </div>
+      <div class="total-row grand-total">
+        <span>Grand Total:</span>
+        <strong>Rs. {{ editTotals().grand | number:'1.2-2' }}</strong>
+      </div>
+      <div class="total-row">
+        <span>Amount Paid:</span>
+        <input type="number" class="edit-input" [formControl]="editAmountPaid"
+          [placeholder]="editTotals().grand.toFixed(2)" style="width:100px" />
+      </div>
+      <div class="total-row text-danger" *ngIf="editTotals().balDue > 0">
+        <span>Balance Due:</span>
+        <strong>Rs. {{ editTotals().balDue | number:'1.2-2' }}</strong>
+      </div>
+    </div>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-stroked-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary" (click)="saveEdit()">
+      <mat-icon>save</mat-icon> Save Changes
+    </button>
+  </mat-dialog-actions>
+</ng-template>
+
+<!-- ─── Customer Ledger Dialog ───────────────────────────────────────────── -->
+<ng-template #ledgerDialog>
+  <h2 mat-dialog-title>
+    <mat-icon style="vertical-align:middle;margin-right:6px">account_balance_wallet</mat-icon>
+    Customer Ledger — {{ ledgerData?.customer?.name }}
+  </h2>
+  <mat-dialog-content style="min-width:550px">
+    <div class="balance-summary" *ngIf="ledgerData?.customer">
+      <span>Current Balance:</span>
+      <strong [class.text-danger]="ledgerData.customer.balance > 0">
+        Rs. {{ ledgerData.customer.balance | number:'1.2-2' }}
+      </strong>
+    </div>
+    <table class="items-table" *ngIf="ledgerData?.ledger?.length; else noLedger">
+      <thead>
+        <tr><th>Date</th><th>Type</th><th>Invoice</th><th>Debit</th><th>Credit</th><th>Balance</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let l of ledgerData.ledger">
+          <td>{{ l.createdAt | date:'dd/MM/yy h:mm a' }}</td>
+          <td><span class="type-badge type-{{l.type.toLowerCase()}}">{{l.type}}</span></td>
+          <td>{{ l.invoiceNo || '—' }}</td>
+          <td class="text-danger">{{ l.debit > 0 ? ('Rs. ' + (l.debit | number:'1.2-2')) : '—' }}</td>
+          <td class="text-success">{{ l.credit > 0 ? ('Rs. ' + (l.credit | number:'1.2-2')) : '—' }}</td>
+          <td><strong>Rs. {{ l.balance | number:'1.2-2' }}</strong></td>
+        </tr>
+      </tbody>
+    </table>
+    <ng-template #noLedger>
+      <p style="text-align:center;padding:20px;color:#888">No ledger entries found.</p>
+    </ng-template>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-stroked-button mat-dialog-close>Close</button>
+  </mat-dialog-actions>
+</ng-template>

@@ -1,0 +1,172 @@
+<app-page-header title="Reports & Analytics" subtitle="Business insights and performance metrics">
+  <div class="header-controls">
+    <mat-form-field appearance="outline" class="date-field">
+      <mat-label>From</mat-label>
+      <input matInput type="date" [(ngModel)]="from" (change)="load()" />
+      <mat-icon matPrefix>calendar_today</mat-icon>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="date-field">
+      <mat-label>To</mat-label>
+      <input matInput type="date" [(ngModel)]="to" (change)="load()" />
+      <mat-icon matPrefix>calendar_today</mat-icon>
+    </mat-form-field>
+    <button mat-raised-button color="primary" (click)="load()">
+      <mat-icon>refresh</mat-icon>
+      Refresh
+    </button>
+  </div>
+</app-page-header>
+
+<!-- Summary Statistics -->
+<div class="stats-overview" *ngIf="summary">
+  <mat-card class="stat-card stat-primary">
+    <div class="stat-icon">
+      <mat-icon>receipt_long</mat-icon>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{ summary.sales.count }}</div>
+      <div class="stat-label">Total Invoices</div>
+    </div>
+  </mat-card>
+
+  <mat-card class="stat-card stat-success">
+    <div class="stat-icon">
+      <mat-icon>payments</mat-icon>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">Rs. {{ summary.sales.revenue | number:'1.2-2' }}</div>
+      <div class="stat-label">Total Revenue</div>
+    </div>
+  </mat-card>
+
+  <mat-card class="stat-card stat-warning">
+    <div class="stat-icon">
+      <mat-icon>warning</mat-icon>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{ summary.lowStock.count }}</div>
+      <div class="stat-label">Low Stock Items</div>
+    </div>
+  </mat-card>
+
+  <mat-card class="stat-card stat-info">
+    <div class="stat-icon">
+      <mat-icon>schedule</mat-icon>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{ summary.expiring.count }}</div>
+      <div class="stat-label">Expiring Soon</div>
+    </div>
+  </mat-card>
+</div>
+
+<!-- Charts Section -->
+<div class="charts-section">
+  <!-- Revenue Trend Chart -->
+  <mat-card class="chart-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>trending_up</mat-icon>
+        Revenue Trend
+      </mat-card-title>
+      <mat-card-subtitle>Daily revenue for selected period</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="chart-wrapper">
+        <canvas baseChart 
+                [data]="revenueChartData" 
+                [options]="revenueChartOptions" 
+                [type]="'line'">
+        </canvas>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Category Distribution Chart -->
+  <mat-card class="chart-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>pie_chart</mat-icon>
+        Sales by Category
+      </mat-card-title>
+      <mat-card-subtitle>Product category distribution</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="chart-wrapper">
+        <canvas baseChart 
+                [data]="categoryChartData" 
+                [options]="categoryChartOptions" 
+                [type]="'doughnut'">
+        </canvas>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<!-- GST Section -->
+<!-- <mat-card class="gst-card">
+  <mat-card-header>
+    <mat-card-title>
+      <mat-icon>account_balance</mat-icon>
+      GST Report
+    </mat-card-title>
+    <mat-card-subtitle>Tax collected during selected period</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="gst-chart-wrapper">
+      <canvas baseChart 
+              [data]="gstLine" 
+              [options]="gstChartOptions" 
+              [type]="'bar'">
+      </canvas>
+    </div>
+
+    <div class="gst-table" *ngIf="gstRows.length > 0">
+      <div class="table-header">Daily GST Details</div>
+      <table mat-table [dataSource]="gstRows" class="mat-elevation-z0">
+        <ng-container matColumnDef="day">
+          <th mat-header-cell *matHeaderCellDef>DATE</th>
+          <td mat-cell *matCellDef="let row">{{ row.day }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="taxable">
+          <th mat-header-cell *matHeaderCellDef>TAXABLE AMOUNT</th>
+          <td mat-cell *matCellDef="let row">Rs. {{ row.taxableValue | number:'1.2-2' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="gst">
+          <th mat-header-cell *matHeaderCellDef>GST COLLECTED</th>
+          <td mat-cell *matCellDef="let row">Rs. {{ row.gstValue | number:'1.2-2' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="total">
+          <th mat-header-cell *matHeaderCellDef>TOTAL</th>
+          <td mat-cell *matCellDef="let row">Rs. {{ row.total | number:'1.2-2' }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="['day', 'taxable', 'gst', 'total']"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['day', 'taxable', 'gst', 'total'];"></tr>
+      </table>
+    </div>
+  </mat-card-content>
+</mat-card> -->
+
+<!-- Top Products Section -->
+<mat-card class="top-products-card">
+  <mat-card-header>
+    <mat-card-title>
+      <mat-icon>star</mat-icon>
+      Top Selling Products
+    </mat-card-title>
+    <mat-card-subtitle>Best performers in selected period</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="chart-wrapper">
+      <canvas baseChart 
+              [data]="topProductsData" 
+              [options]="topProductsOptions" 
+              [type]="'bar'">
+      </canvas>
+    </div>
+  </mat-card-content>
+</mat-card>

@@ -1,0 +1,101 @@
+<app-page-header title="Returns" subtitle="Create return against an invoice and restock items"></app-page-header>
+
+<div class="layout">
+  <mat-card class="surface panel">
+    <mat-card-title>Create return</mat-card-title>
+    <mat-card-content>
+      <div class="searchRow">
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Invoice # / Customer name</mat-label>
+          <input matInput [(ngModel)]="invoiceSearch" (keydown.enter)="searchSale()" placeholder="e.g. INV-20260216-0001" />
+        </mat-form-field>
+        <button mat-stroked-button (click)="searchSale()"><mat-icon>search</mat-icon>Find</button>
+      </div>
+
+      <div class="results" *ngIf="saleResults.length">
+        <div class="muted">Select an invoice:</div>
+        <div class="chips">
+          <button mat-stroked-button *ngFor="let r of saleResults" (click)="pickSale(r)">
+            {{ r.invoiceNo }} • {{ r.grandTotal | number:'1.2-2' }}
+          </button>
+        </div>
+      </div>
+
+      <mat-divider *ngIf="sale"></mat-divider>
+
+      <div *ngIf="sale" class="sale">
+        <div class="head">
+          <div>
+            <div class="t">Invoice {{ sale.invoiceNo }}</div>
+            <div class="muted">{{ sale.createdAt | date:'medium' }}</div>
+          </div>
+          <div class="muted">Total: <b>{{ sale.grandTotal | number:'1.2-2' }}</b></div>
+        </div>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Reason</mat-label>
+          <textarea matInput rows="2" [formControl]="form.controls.reason"></textarea>
+        </mat-form-field>
+
+        <div class="tableWrap">
+          <table mat-table [dataSource]="sale.items" class="mat-elevation-z0">
+            <ng-container matColumnDef="item">
+              <th mat-header-cell *matHeaderCellDef>Item</th>
+              <td mat-cell *matCellDef="let it">{{ it.productName }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="sold">
+              <th mat-header-cell *matHeaderCellDef align="right">Sold</th>
+              <td mat-cell *matCellDef="let it" align="right">{{ it.qty }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="return">
+              <th mat-header-cell *matHeaderCellDef align="right">Return qty</th>
+              <td mat-cell *matCellDef="let it" align="right">
+                <input class="qty" type="number" min="0" [max]="it.qty" [(ngModel)]="qtyByItemId[it.id]" aria-label="Return quantity" />
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="['item','sold','return']"></tr>
+            <tr mat-row *matRowDef="let row; columns: ['item','sold','return'];"></tr>
+          </table>
+        </div>
+
+        <button mat-raised-button color="primary" (click)="createReturn()"><mat-icon>undo</mat-icon>Create return</button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="surface panel">
+    <mat-card-title>Recent returns</mat-card-title>
+    <mat-card-content>
+      <div class="tableWrap" *ngIf="rows.length; else empty">
+        <table mat-table [dataSource]="rows" class="mat-elevation-z0">
+          <ng-container matColumnDef="invoiceNo">
+            <th mat-header-cell *matHeaderCellDef>Sale</th>
+            <td mat-cell *matCellDef="let r"><b>{{ r.invoiceNo }}</b></td>
+          </ng-container>
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef>Date</th>
+            <td mat-cell *matCellDef="let r">{{ r.createdAt | date:'medium' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="grandTotal">
+            <th mat-header-cell *matHeaderCellDef align="right">Refund</th>
+            <td mat-cell *matCellDef="let r" align="right">{{ r.refundTotal | number:'1.2-2' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef align="right"> </th>
+            <td mat-cell *matCellDef="let r" align="right" class="muted">{{ r.reason || '' }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="['invoiceNo','createdAt','grandTotal','actions']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['invoiceNo','createdAt','grandTotal','actions'];"></tr>
+        </table>
+      </div>
+
+      <ng-template #empty>
+        <app-empty-state icon="↩️" title="No returns yet" description="Search an invoice and create a return."></app-empty-state>
+      </ng-template>
+    </mat-card-content>
+  </mat-card>
+</div>

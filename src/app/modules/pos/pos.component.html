@@ -1,0 +1,297 @@
+<app-page-header title="New Bill / Point of Sale" subtitle="Create invoices and process transactions">
+  <button mat-raised-button color="accent" (click)="barcodeInput?.focus()">
+    <mat-icon>qr_code_scanner</mat-icon>
+    Focus Scanner
+  </button>
+</app-page-header>
+
+<div class="pos-layout">
+  <!-- Left Panel: Cart Items -->
+  <div class="left-panel">
+    <mat-card class="cart-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>search</mat-icon>
+          Search Medicine
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-form-field appearance="outline" class="search-field">
+          <input #barcodeInput matInput [formControl]="searchCtrl" (keydown.enter)="onEnter()" [matAutocomplete]="auto"
+            placeholder="Search medicine by name or barcode..." />
+          <mat-icon matPrefix>search</mat-icon>
+          <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectProduct($event.option.value)">
+            <mat-option *ngIf="searching" disabled>
+              <span class="searching-text">Searching...</span>
+            </mat-option>
+            <mat-option *ngFor="let p of suggestions" [value]="p" class="product-option">
+              <div class="product-option-content">
+                <div class="product-name">{{ p.name }}</div>
+                <div class="product-details">
+                  <span class="category-badge">{{ p.category || 'Other' }}</span>
+                  <span class="stock-info">Stock: {{ p.stockQty }}</span>
+                  <span class="price-info">Rs. {{ p.price | number:'1.2-2' }}</span>
+                </div>
+              </div>
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="items-card mt-3">
+      <mat-card-header>
+        <mat-card-title>Cart Items</mat-card-title>
+        <button mat-icon-button *ngIf="cart.length" (click)="clearCart()" matTooltip="Clear all items">
+          <mat-icon>delete_sweep</mat-icon>
+        </button>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="cart-items" *ngIf="cart.length; else emptyCart">
+          <div class="cart-item" *ngFor="let item of cart; let i = index">
+            <div class="item-details">
+              <div class="item-name">{{ item.productName }}</div>
+              <div class="item-meta">
+                <span class="item-price">Rs. {{ item.price | number:'1.2-2' }}</span>
+                <span class="item-separator">×</span>
+                <span class="item-qty-display">{{ item.qty }}</span>
+                <span class="item-unit-badge">{{ item.packagingUnit }}</span>
+              </div>
+            </div>
+            <div class="item-controls">
+              <div class="qty-controls">
+                <button mat-icon-button (click)="decreaseQty(item)" [disabled]="item.qty <= 1">
+                  <mat-icon>remove</mat-icon>
+                </button>
+                <input class="qty-input" type="number" [value]="item.qty" min="1"
+                  (change)="updateQty(item, $any($event.target).value)" />
+                <button mat-icon-button (click)="increaseQty(item)">
+                  <mat-icon>add</mat-icon>
+                </button>
+              </div>
+
+              <!-- Per-item product discount % (Step 1: applied first on base price) -->
+              <div class="item-discount-wrap" matTooltip="Product discount %">
+                <input class="disc-input" type="number" [value]="item.productDiscount" min="0" max="100"
+                  (change)="updateDiscount(item, $any($event.target).value)" placeholder="0%" />
+                <span class="disc-label">%disc</span>
+              </div>
+
+              <!-- Per-item extra discount % (Step 2: applied on price after productDiscount) -->
+              <div class="item-discount-wrap" matTooltip="Extra discount % (applied after product discount)">
+                <input class="disc-input" type="number" [value]="item.extraDiscount" min="0" max="100"
+                  (change)="updateExtraDiscount(item, $any($event.target).value)" placeholder="0%" />
+                <span class="disc-label">%edc</span>
+              </div>
+
+              <div class="item-total">Rs. {{ item.lineTotal | number:'1.2-2' }}</div>
+              <button mat-icon-button color="warn" (click)="remove(item)" class="remove-btn">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #emptyCart>
+          <div class="empty-cart">
+            <mat-icon>shopping_cart</mat-icon>
+            <p>No items in cart</p>
+            <span>Search and add medicines to start billing</span>
+          </div>
+        </ng-template>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Right Panel: Bill Summary -->
+  <div class="right-panel">
+    <mat-card class="summary-card">
+      <mat-card-header>
+        <mat-card-title>Bill Summary</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+
+        <!-- ── Customer Section ─────────────────────────────────────────────────── -->
+        <div class="customer-section">
+          <div class="section-label">CUSTOMER (OPTIONAL)</div>
+
+          <!-- 
+            STATE 1: No customer selected yet → show search field with autocomplete 
+          -->
+          <ng-container *ngIf="!selectedCustomer && !isNewCustomer">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-icon matPrefix>person_search</mat-icon>
+              <input matInput [formControl]="customerSearchCtrl" [matAutocomplete]="customerAuto"
+                placeholder="Search by name or phone..." />
+              <mat-autocomplete #customerAuto="matAutocomplete">
+
+                <!-- Loading indicator -->
+                <mat-option *ngIf="searchingCustomers" disabled>
+                  <span class="searching-text">Searching customers...</span>
+                </mat-option>
+
+                <!-- Existing customers from DB -->
+                <mat-option *ngFor="let c of customerSuggestions" [value]="c.name" (click)="selectCustomer(c)"
+                  class="customer-option">
+                  <div class="customer-option-content">
+                    <mat-icon class="customer-icon">person</mat-icon>
+                    <div class="customer-info">
+                      <div class="customer-name">{{ c.name }}</div>
+                      <div class="customer-phone" *ngIf="c.phone">{{ c.phone }}</div>
+                    </div>
+                  </div>
+                </mat-option>
+
+                <!-- "Create new" option – always shown when user has typed something -->
+                <mat-option *ngIf="customerSearchCtrl.value && !searchingCustomers" [value]="CREATE_NEW"
+                  (click)="selectCreateNew()" class="create-new-option">
+                  <div class="create-new-content">
+                    <mat-icon>person_add</mat-icon>
+                    <span>+ Create new: <strong>{{ customerSearchCtrl.value }}</strong></span>
+                  </div>
+                </mat-option>
+
+              </mat-autocomplete>
+            </mat-form-field>
+          </ng-container>
+
+          <!-- 
+            STATE 2: Existing customer selected → show chip / summary 
+          -->
+          <div *ngIf="selectedCustomer" class="selected-customer-chip">
+            <mat-icon>person</mat-icon>
+            <div class="chip-info">
+              <span class="chip-name">{{ selectedCustomer.name }}</span>
+              <span class="chip-phone" *ngIf="selectedCustomer.phone">{{ selectedCustomer.phone }}</span>
+            </div>
+            <button mat-icon-button (click)="clearCustomer()" matTooltip="Change customer" class="chip-clear">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <!-- 
+            STATE 3: "Create new" chosen → show inline name + phone fields 
+          -->
+          <div *ngIf="isNewCustomer" class="new-customer-form">
+            <div class="new-customer-header">
+              <mat-icon>person_add</mat-icon>
+              <span>New Customer</span>
+              <button mat-icon-button (click)="clearCustomer()" matTooltip="Cancel" class="chip-clear">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Name *</mat-label>
+              <input matInput [formControl]="newCustomerNameCtrl" placeholder="Full name" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Phone (optional)</mat-label>
+              <input matInput [formControl]="newCustomerPhoneCtrl" placeholder="10-digit mobile" />
+            </mat-form-field>
+
+            <div class="new-customer-note">
+              <mat-icon>info</mat-icon>
+              <span>This customer will be saved when you generate the bill.</span>
+            </div>
+          </div>
+        </div>
+        <!-- ── End Customer Section ────────────────────────────────── -->
+
+        <!-- Bill Totals -->
+        <div class="totals-section">
+          <div class="total-row">
+            <span>Subtotal</span>
+            <span class="amount">Rs. {{ totals().subTotal | number:'1.2-2' }}</span>
+          </div>
+          <div class="total-row text-danger" *ngIf="totals().discountTotal > 0">
+            <span>Item Discounts</span>
+            <span class="amount">- Rs. {{ totals().discountTotal | number:'1.2-2' }}</span>
+          </div>
+          <div class="total-row">
+            <span>GST</span>
+            <span class="amount">Rs. {{ totals().gstTotal | number:'1.2-2' }}</span>
+          </div>
+          <!-- Bill-level extra discount -->
+          <div class="total-row">
+            <span>Extra Discount %</span>
+            <div class="discount-input">
+              <input type="number" [formControl]="billDiscountCtrl" min="0" max="100" placeholder="0" />
+              <span class="disc-label">%</span>
+            </div>
+          </div>
+          <div class="total-row text-danger" *ngIf="totals().billDiscAmt > 0">
+            <span>Bill Discount</span>
+            <span class="amount">- Rs. {{ totals().billDiscAmt | number:'1.2-2' }}</span>
+          </div>
+          <div class="total-row grand-total">
+            <span>Grand Total</span>
+            <span class="amount">Rs. {{ totals().grandTotal | number:'1.2-2' }}</span>
+          </div>
+          <!-- Previous balance if customer selected -->
+          <div class="total-row prev-balance" *ngIf="(selectedCustomer || isNewCustomer) && customerPrevBalance > 0">
+            <span>Previous Balance</span>
+            <span class="amount text-danger">+ Rs. {{ customerPrevBalance | number:'1.2-2' }}</span>
+          </div>
+          <!-- Amount paid (partial payment) -->
+          <div class="total-row">
+            <span>Amount Paid</span>
+            <div class="discount-input">
+              <input type="number" [formControl]="amountPaidCtrl" min="0"
+                [placeholder]="totals().grandTotal | number:'1.2-2'" />
+            </div>
+          </div>
+          <div class="total-row balance-due" *ngIf="totals().balanceDue > 0">
+            <span>Balance Due (Credit)</span>
+            <span class="amount text-danger">Rs. {{ totals().balanceDue | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="payment-section">
+          <div class="section-label">PAYMENT METHOD</div>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-select [formControl]="paymentMethodCtrl">
+              <mat-option value="CASH">Cash</mat-option>
+              <mat-option value="CARD">Card</mat-option>
+              <mat-option value="UPI">UPI</mat-option>
+              <mat-option value="MIXED">Mixed</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- Actions -->
+        <div class="action-buttons">
+          <button mat-raised-button color="primary" class="generate-bill-btn" (click)="checkout()"
+            [disabled]="!cart.length">
+            <mat-icon>receipt</mat-icon>
+            Generate Bill
+          </button>
+          <button mat-stroked-button class="clear-cart-btn" (click)="clearCart()" [disabled]="!cart.length">
+            Clear Cart
+          </button>
+        </div>
+
+        <!-- Last Sale Info -->
+        <div class="last-sale" *ngIf="lastSale">
+          <div class="last-sale-header">
+            <mat-icon>check_circle</mat-icon>
+            <span>Last sale completed</span>
+          </div>
+          <div class="last-sale-info">
+            <span>Invoice: <strong>{{ lastSale.invoiceNo }}</strong></span>
+            <span class="amount">Rs. {{ lastSale.grandTotal | number:'1.2-2' }}</span>
+          </div>
+          <div class="last-sale-actions">
+            <button mat-raised-button color="accent" (click)="print()">
+              <mat-icon>print</mat-icon>
+              Print Receipt
+            </button>
+          </div>
+        </div>
+
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

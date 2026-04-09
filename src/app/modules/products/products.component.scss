@@ -1,0 +1,216 @@
+.layout{
+  display:grid;
+  grid-template-columns: 1.1fr 1.4fr;
+  gap: 12px;
+}
+.panel{ padding: 12px; }
+.form{ margin-top: 8px; }
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.actions{ margin-top: 10px; display:flex; gap: 10px; flex-wrap:wrap; }
+.searchRow{ display:flex; gap: 10px; align-items:flex-start; }
+.full{ width: 100%; }
+.tableWrap{ margin-top: 10px; overflow:auto; }
+.name{ font-weight: 700; }
+.muted{ color: var(--app-muted); font-size: 12px; }
+.bad{ color: #fecaca; font-weight: 800; }
+@media (max-width: 1100px){
+  .layout{ grid-template-columns: 1fr; }
+  .grid2{ grid-template-columns: 1fr; }
+  .searchRow{ flex-direction:column; }
+}
+
+
+.chip{
+  display:inline-flex;
+  align-items:center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(79,70,229,.12);
+  border: 1px solid rgba(79,70,229,.25);
+  font-weight: 700;
+  font-size: 12px;
+}
+.small{ margin-left:8px; }
+.cat{ min-width: 190px; }
+
+/* Status chips */
+.status-chip { display:inline-flex; align-items:center; padding:4px 12px; border-radius:999px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; }
+.chip-green  { background:var(--status-success-bg, #d1fae5); color:var(--status-success-text, #065f46); }
+.chip-amber  { background:var(--status-warning-bg, #fef3c7); color:var(--status-warning-text, #92400e); }
+.chip-red    { background:var(--status-danger-bg,  #fee2e2); color:var(--status-danger-text,  #991b1b); }
+.expiring-cell { color:#d97706; font-weight:600; }
+.modal-form .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px 16px; }
+@media(max-width:600px) { .modal-form .form-grid { grid-template-columns:1fr; } }
+
+
+
+
+
+// ============= Custom CSS ==============
+/* Card */
+.medicine-card {
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+
+/* Table */
+.medicine-table {
+  width: 100%;
+  min-width: 900px;
+  /* Allows scroll on small screens */
+  border-collapse: collapse;
+}
+
+/* Header */
+th {
+  font-weight: 600;
+  font-size: 13px;
+  color: #555;
+  padding: 14px 12px;
+  border-bottom: 1px solid #eee;
+  background: #fafafa;
+}
+
+/* Cells */
+td {
+  padding: 14px 12px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f5f5f5;
+  font-size: 14px;
+}
+
+/* Rows */
+.data-row:hover {
+  background: #f9fbff;
+}
+
+/* Medicine */
+.medicine-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.medicine-sku {
+  font-size: 12px;
+}
+
+/* Badges */
+.badge {
+  padding: 5px 10px;
+  font-weight: 500;
+  border-radius: 6px;
+}
+
+/* Category */
+.badge-category {
+  background: #eef2ff;
+  color: #3f51b5;
+}
+
+/* Stock */
+.badge-stock {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.badge-stock.low {
+  background: #ffebee;
+  color: #c62828;
+}
+
+/* Price */
+.price {
+  font-weight: 600;
+  color: #2e7d32;
+}
+
+/* Expiry */
+.expiring {
+  color: #d32f2f;
+  font-weight: 600;
+}
+
+/* Actions */
+.action-btn {
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 18px;
+}
+
+/* Dropdown */
+.dropdown-menu {
+  border-radius: 10px;
+  border: none;
+}
+
+/* Responsive Scroll */
+.table-responsive {
+  overflow-x: auto;
+}
+
+/* Prevent Layout Breaking */
+td,
+th {
+  white-space: nowrap;
+}
+
+
+
+
+// ====================== Form Css =================
+/* Container */
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  /* space between rows */
+}
+
+/* Each row */
+.form-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  /* responsive */
+}
+
+/* Form fields */
+.form-field {
+  flex: 1 1 calc(33.33% - 16px);
+  /* default 3 columns per row */
+}
+
+/* Full-width fields (expiry date etc.) */
+.full-width {
+  flex: 1 1 100%;
+}
+
+/* Adjust for 2-column rows dynamically */
+.form-row.two-columns .form-field {
+  flex: 1 1 calc(50% - 16px);
+}
+
+/* Responsive for mobile */
+@media (max-width: 960px) {
+  .form-field {
+    flex: 1 1 100%;
+  }
+}
+
+/* Material styling enhancements */
+.mat-form-field {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  padding: 4px;
+}
+
+/* Highlight required fields */
+.mat-form-field-required .mat-form-field-label::after {
+  content: " *";
+  color: red;
+}

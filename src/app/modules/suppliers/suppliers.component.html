@@ -1,0 +1,131 @@
+<app-page-header title="Supplier Management" subtitle="Manage medicine suppliers">
+  <button mat-raised-button color="primary" (click)="openModal()">
+    <mat-icon>add</mat-icon>
+    Add Supplier
+  </button>
+</app-page-header>
+
+<div class="suppliers-grid" *ngIf="rows.length > 0; else noSuppliers">
+  <mat-card class="supplier-card" *ngFor="let supplier of rows">
+    <mat-card-content>
+      <div class="supplier-header d-flex justify-content-between align-items-center">
+      
+        <div class="customer-name">
+          {{ supplier.name }}
+        </div>
+      
+        <div>
+          <button mat-icon-button (click)="openModal(supplier)" matTooltip="Edit">
+            <mat-icon>edit</mat-icon>
+          </button>
+      
+          <button mat-icon-button color="warn" (click)="remove(supplier)" matTooltip="Delete">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      
+      </div>
+      
+      <div class="supplier-contact" *ngIf="supplier.contactPerson">
+        <mat-icon>person</mat-icon>
+        <span>{{ supplier.contactPerson }}</span>
+      </div>
+      
+      <div class="supplier-contact" *ngIf="supplier.phone">
+        <mat-icon>call</mat-icon>
+        <span>{{ supplier.phone }}</span>
+      </div>
+      
+      <div class="supplier-contact" *ngIf="supplier.email">
+        <mat-icon>email</mat-icon>
+        <span>{{ supplier.email }}</span>
+      </div>
+      
+      <div class="supplier-contact" *ngIf="supplier.address">
+        <mat-icon>place</mat-icon>
+        <span>{{ supplier.address }}</span>
+      </div>
+
+      <div class="supplier-notes" *ngIf="supplier.notes">
+        <div class="notes-label">Notes:</div>
+        <div class="notes-content">{{ supplier.notes }}</div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<ng-template #noSuppliers>
+  <div class="empty-suppliers">
+    <mat-icon>local_shipping</mat-icon>
+    <h3>No suppliers yet</h3>
+    <p>Add suppliers to manage your medicine inventory</p>
+    <button mat-raised-button color="primary" (click)="openModal()">
+      <mat-icon>add</mat-icon>
+      Add First Supplier
+    </button>
+  </div>
+</ng-template>
+
+<!-- Add/Edit Supplier Modal -->
+<ng-template #supplierDialog>
+  <h2 mat-dialog-title>
+    <mat-icon>{{ editing ? 'edit' : 'add_business' }}</mat-icon>
+    {{ editing ? 'Edit Supplier' : 'Add New Supplier' }}
+  </h2>
+  <mat-dialog-content>
+    <form [formGroup]="form" class="supplier-form">
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Supplier Name *</mat-label>
+          <input matInput formControlName="name" placeholder="Enter supplier name" required />
+          <mat-icon matPrefix>business</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Contact Person</mat-label>
+          <input matInput formControlName="contactPerson" placeholder="Contact person name" />
+          <mat-icon matPrefix>person</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row-split">
+        <mat-form-field appearance="outline">
+          <mat-label>Phone *</mat-label>
+          <input matInput formControlName="phone" placeholder="Phone number" />
+          <mat-icon matPrefix>call</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" type="email" placeholder="Email address" />
+          <mat-icon matPrefix>email</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Address</mat-label>
+          <textarea matInput formControlName="address" rows="2" placeholder="Full address"></textarea>
+          <mat-icon matPrefix>place</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Notes</mat-label>
+          <textarea matInput formControlName="notes" rows="2" placeholder="Additional notes (optional)"></textarea>
+          <mat-icon matPrefix>note</mat-icon>
+        </mat-form-field>
+      </div>
+    </form>
+  </mat-dialog-content>
+  <mat-dialog-actions>
+    <button mat-stroked-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary" (click)="save()" [disabled]="form.invalid">
+      <mat-icon>{{ editing ? 'save' : 'add' }}</mat-icon>
+      {{ editing ? 'Update Supplier' : 'Add Supplier' }}
+    </button>
+  </mat-dialog-actions>
+</ng-template>

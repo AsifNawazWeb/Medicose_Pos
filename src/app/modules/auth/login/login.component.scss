@@ -1,0 +1,190 @@
+.wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(13, 148, 136, 0.08), transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.06), transparent 50%),
+    var(--app-bg);
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      linear-gradient(45deg, transparent 48%, var(--app-border-light) 48%, var(--app-border-light) 52%, transparent 52%),
+      linear-gradient(-45deg, transparent 48%, var(--app-border-light) 48%, var(--app-border-light) 52%, transparent 52%);
+    background-size: 60px 60px;
+    opacity: 0.3;
+    pointer-events: none;
+  }
+}
+
+.card {
+  width: min(440px, 95vw);
+  padding: var(--spacing-2xl);
+  position: relative;
+  z-index: 1;
+  animation: fadeIn 0.5s ease-out;
+  box-shadow: var(--app-shadow-lg);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, var(--app-primary), var(--app-primary-light), var(--app-accent));
+    border-radius: var(--app-radius) var(--app-radius) 0 0;
+  }
+  
+  mat-card-header {
+    text-align: center;
+    margin-bottom: var(--spacing-2xl);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+    
+    &::before {
+      content: '⚕️';
+      font-size: 64px;
+      display: block;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+    }
+  }
+  
+  mat-card-title {
+    font-size: 28px !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    background: linear-gradient(135deg, var(--app-text), var(--app-primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  mat-card-subtitle {
+    font-size: 15px !important;
+    color: var(--app-text-secondary) !important;
+    margin: var(--spacing-sm) 0 0 !important;
+  }
+  
+  mat-card-content {
+    padding: 0 !important;
+  }
+}
+
+.full {
+  width: 100%;
+  
+  &.mat-mdc-form-field {
+    margin-bottom: var(--spacing-lg);
+  }
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  
+  mat-form-field {
+    .mat-mdc-text-field-wrapper {
+      background: var(--app-bg);
+    }
+    
+    input {
+      font-size: 15px;
+      padding: var(--spacing-sm) 0;
+    }
+  }
+  
+  button[type="submit"] {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-xl) !important;
+    height: 52px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    box-shadow: var(--app-shadow) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    &:hover:not(:disabled) {
+      box-shadow: var(--app-shadow-md) !important;
+      transform: translateY(-2px);
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    mat-icon {
+      margin-right: var(--spacing-sm);
+    }
+  }
+}
+
+.row {
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  text-align: center;
+  border-top: 1px solid var(--app-border);
+  
+  a {
+    color: var(--app-primary);
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    
+    &:hover {
+      color: var(--app-primary-light);
+      text-decoration: underline;
+    }
+  }
+}
+
+// Loading state
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--app-radius);
+  z-index: 10;
+}
+
+.theme-dark .loading-overlay {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+// Responsive
+@media (max-width: 600px) {
+  .wrap {
+    padding: var(--spacing-md);
+  }
+  
+  .card {
+    padding: var(--spacing-xl);
+    
+    mat-card-header::before {
+      font-size: 48px;
+    }
+    
+    mat-card-title {
+      font-size: 24px !important;
+    }
+  }
+}

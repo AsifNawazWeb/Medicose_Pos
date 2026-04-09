@@ -1,0 +1,9 @@
+<div class="wrap surface" role="region" [attr.aria-label]="title">
+  <div>
+    <h1 class="h">{{ title }}</h1>
+    <p class="s" *ngIf="subtitle">{{ subtitle }}</p>
+  </div>
+  <div class="actions" [attr.aria-label]="actionsLabel">
+    <ng-content></ng-content>
+  </div>
+</div>

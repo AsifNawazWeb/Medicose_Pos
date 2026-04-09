@@ -1,0 +1,46 @@
+<app-page-header title="Settings" subtitle="Store profile, receipt footer, GST and preferences">
+  <button mat-stroked-button routerLink="/settings/security"><mat-icon>security</mat-icon>Security</button>
+</app-page-header>
+
+<mat-card class="surface panel">
+  <mat-card-title>Store settings</mat-card-title>
+  <mat-card-content>
+    <form [formGroup]="form" class="form">
+      <div class="grid2">
+        <mat-form-field appearance="outline">
+          <mat-label>Store name</mat-label>
+          <input matInput formControlName="storeName" required />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Phone</mat-label>
+          <input matInput formControlName="storePhone" />
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Address</mat-label>
+        <textarea matInput rows="2" formControlName="storeAddress"></textarea>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Receipt footer</mat-label>
+        <textarea matInput rows="2" formControlName="receiptFooter"></textarea>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>GST enabled</mat-label>
+        <mat-select formControlName="gstEnabled">
+          <mat-option [value]="true">Enabled</mat-option>
+          <mat-option [value]="false">Disabled</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="actions">
+        <button mat-raised-button color="primary" type="button" (click)="save()" [disabled]="form.invalid || loading">
+          <mat-icon>save</mat-icon>Save
+        </button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>

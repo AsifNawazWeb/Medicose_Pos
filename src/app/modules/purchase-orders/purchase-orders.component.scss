@@ -1,0 +1,13 @@
+.layout{ display:grid; grid-template-columns: 1.2fr 1fr; gap: 12px; }
+.panel{ padding:12px; }
+.full{ width:100%; }
+.lines{ margin-top: 10px; }
+.line{ display:flex; gap:10px; align-items:flex-start; margin-bottom: 10px; }
+.grow{ flex: 1; }
+.actions{ display:flex; gap:10px; flex-wrap:wrap; }
+.tableWrap{ margin-top:10px; overflow:auto; }
+.muted{ color: var(--app-muted); font-size: 12px; }
+@media (max-width: 1100px){
+  .layout{ grid-template-columns: 1fr; }
+  .line{ flex-direction:column; }
+}

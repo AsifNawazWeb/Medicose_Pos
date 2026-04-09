@@ -1,0 +1,327 @@
+<app-page-header title="Inventory Management" subtitle="Manage your medical stock">
+  <button mat-raised-button color="primary" (click)="openModal()"><mat-icon>add</mat-icon>Add Medicine</button>
+</app-page-header>
+
+<mat-card class="surface panel">
+  <mat-card-content class="pb-0">
+    <div class="searchRow">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Search inventory...</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput [(ngModel)]="q" (input)="load()" placeholder="Name, barcode, SKU" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="cat">
+        <mat-label>All Categories</mat-label>
+        <mat-select [(ngModel)]="categoryFilter" (selectionChange)="load()">
+          <mat-option [value]="''">All Categories</mat-option>
+          <mat-option *ngFor="let c of categories" [value]="c">{{ c }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="cat">
+        <mat-label>All Stock</mat-label>
+        <mat-select [(ngModel)]="stockFilter" (ngModelChange)="applyStockFilter()">
+          <mat-option [value]="''">All Stock</mat-option>
+          <mat-option value="active">Active</mat-option>
+          <mat-option value="low">Low Stock</mat-option>
+          <mat-option value="out">Out of Stock</mat-option>
+          <mat-option value="expiring">Expiring Soon</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+
+<mat-card class="medicine-card mt-4">
+  <mat-card-content>
+
+    <!-- Responsive Wrapper -->
+    <div class="table-responsive">
+
+      <table mat-table [dataSource]="filteredRows" class="medicine-table">
+
+        <!-- Medicine -->
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Medicine</th>
+          <td mat-cell *matCellDef="let r">
+            <div class="medicine">
+              <div class="medicine-name">{{ r.name }}</div>
+              <div class="medicine-sku text-muted small">
+                {{ r.sku || 'No SKU' }}
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Category -->
+        <ng-container matColumnDef="category">
+          <th mat-header-cell *matHeaderCellDef>Category</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="badge badge-category">
+              {{ r.category || 'General' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Shelf -->
+        <ng-container matColumnDef="shelf">
+          <th mat-header-cell *matHeaderCellDef>Shelf</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="badge chip-amber" *ngIf="r.shelf ">
+              {{ r.shelf }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Batch -->
+        <ng-container matColumnDef="batchNo">
+          <th mat-header-cell *matHeaderCellDef>Batch</th>
+          <td mat-cell *matCellDef="let r">
+            {{ r.batchNo || '—' }}
+          </td>
+        </ng-container>
+
+        <!-- Quantity -->
+        <ng-container matColumnDef="stock">
+          <th mat-header-cell *matHeaderCellDef>Stock</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="badge badge-stock" [class.low]="r.stockQty <= r.reorderLevel">
+              {{ r.stockQty }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Price -->
+        <ng-container matColumnDef="price">
+          <th mat-header-cell *matHeaderCellDef>Price</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="price">
+              Rs. {{ r.price | number:'1.2-2' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Expiry -->
+        <ng-container matColumnDef="expiryDate">
+          <th mat-header-cell *matHeaderCellDef>Expiry</th>
+          <td mat-cell *matCellDef="let r" [class.expiring]="isExpiringSoon(r.expiryDate)">
+            {{ r.expiryDate ? (r.expiryDate | date:'dd MMM yyyy') : '—' }}
+          </td>
+        </ng-container>
+
+        <!-- Status -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="badge" [ngClass]="statusClass(r)">
+              {{ statusLabel(r) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Actions (Dropdown) -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="text-end">
+            Actions
+          </th>
+
+          <td mat-cell *matCellDef="let r" class="text-end">
+
+            <button mat-icon-button [matMenuTriggerFor]="menu" class="action-btn">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+
+            <mat-menu #menu="matMenu">
+
+              <button mat-menu-item (click)="openModal(r)">
+                <mat-icon color="primary">edit</mat-icon>
+                <span>Edit</span>
+              </button>
+
+              <button mat-menu-item (click)="openQtyModal(r)">
+                <mat-icon color="accent">inventory</mat-icon>
+                <span>Update Stock</span>
+              </button>
+
+              <mat-divider></mat-divider>
+
+              <button mat-menu-item (click)="remove(r)">
+                <mat-icon color="warn">delete</mat-icon>
+                <span class="text-danger">Delete</span>
+              </button>
+
+            </mat-menu>
+
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="data-row">
+        </tr>
+
+      </table>
+
+    </div>
+
+  </mat-card-content>
+</mat-card>
+
+<!-- ── ADD/EDIT MODAL ── -->
+<ng-template #productDialog>
+  <h2 mat-dialog-title>{{ editing ? 'Edit Medicine' : 'Add New Medicine' }}</h2>
+  <mat-dialog-content>
+    <form [formGroup]="form" class="modal-form">
+
+      <!-- Row 1: 3 columns -->
+      <div class="form-row mt-3">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Medicine Name *</mat-label>
+          <input matInput formControlName="name" required />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Category *</mat-label>
+          <mat-select formControlName="category" required>
+            <mat-option *ngFor="let c of categories" [value]="c">{{ c }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+
+      <!-- Row 2: 2 columns -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Quantity *</mat-label>
+          <input matInput type="number" formControlName="stockQty" min="0" required/>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Min Stock Level</mat-label>
+          <input matInput type="number" formControlName="reorderLevel" min="0" />
+        </mat-form-field>
+      </div>
+
+      <!-- Row 3: 3 columns -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Price (Rs. ) *</mat-label>
+          <input matInput type="number" formControlName="price" min="0" required/>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Cost (Rs. )</mat-label>
+          <input matInput type="number" formControlName="cost" min="0" required/>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>GST %</mat-label>
+          <input matInput type="number" formControlName="gstRate" min="0" max="100" />
+        </mat-form-field>
+      </div>
+
+      <!-- Row 4: 2 columns -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Supplier</mat-label>
+          <mat-select formControlName="supplierId">
+            <mat-option [value]="null">None</mat-option>
+            <mat-option *ngFor="let s of suppliers" [value]="s.id">{{ s.name }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Shelf</mat-label>
+          <mat-select formControlName="shelf" required>
+            <mat-option *ngFor="let s of shelves" [value]="s">{{ s }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Expiry Date</mat-label>
+          <input matInput [matDatepicker]="fromPicker" formControlName="expiryDate">
+          <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+          <mat-datepicker #fromPicker></mat-datepicker>
+          <mat-icon matPrefix>calendar_today</mat-icon>
+        </mat-form-field>
+      </div>
+
+
+      <!-- Row 6: 2 columns -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Barcode</mat-label>
+          <input matInput formControlName="barcode" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Batch Number</mat-label>
+          <input matInput formControlName="batchNo" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>SKU</mat-label>
+          <input matInput formControlName="sku" />
+        </mat-form-field>
+
+        <!-- ─── New fields: Product Discount & Packaging ─── -->
+        <mat-form-field appearance="outline">
+          <mat-label>Product Discount %</mat-label>
+          <input matInput type="number" formControlName="productDiscount" min="0" max="100" />
+          <mat-hint>Default % discount applied at billing</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Packaging Unit</mat-label>
+          <mat-select formControlName="packagingUnit">
+            <mat-option value="unit">Unit / Piece</mat-option>
+            <mat-option value="strip">Strip</mat-option>
+            <mat-option value="box">Box</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Units per Strip</mat-label>
+          <input matInput type="number" formControlName="unitsPerStrip" min="1" />
+          <mat-hint>e.g. 10 tablets per strip</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Strips per Box</mat-label>
+          <input matInput type="number" formControlName="stripsPerBox" min="1" />
+          <mat-hint>e.g. 4 strips per box</mat-hint>
+        </mat-form-field>
+      </div>
+
+    </form>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-stroked-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary" (click)="save()" [disabled]="form.invalid">
+      {{ editing ? 'Update Medicine' : 'Add Medicine' }}
+    </button>
+  </mat-dialog-actions>
+</ng-template>
+
+<!-- ── QUANTITY UPDATE MODAL ── -->
+<ng-template #qtyDialog>
+  <h2 mat-dialog-title>Update Quantity</h2>
+  <mat-dialog-content style="padding-top:16px">
+    <div style="margin-bottom:20px">
+      <div style="font-weight:600;font-size:16px;margin-bottom:4px">{{ editingProduct?.name }}</div>
+      <div style="font-size:13px;color:#64748b">Current Stock: <strong>{{ editingProduct?.stockQty }}</strong> units
+      </div>
+    </div>
+    <mat-form-field appearance="outline" style="width:100%">
+      <mat-label>New Quantity *</mat-label>
+      <input matInput type="number" [(ngModel)]="newQty" min="0" required />
+      <mat-hint>Enter the new stock quantity</mat-hint>
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-stroked-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary" (click)="saveQty()">
+      Update Quantity
+    </button>
+  </mat-dialog-actions>
+</ng-template>

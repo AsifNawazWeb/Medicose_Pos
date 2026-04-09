@@ -1,0 +1,122 @@
+<app-page-header title="Customers" subtitle="Maintain customer records and loyalty points">
+  <button mat-raised-button color="primary" (click)="openModal()">
+    <mat-icon>add</mat-icon>
+    Add Customer
+  </button>
+</app-page-header>
+
+<div class="suppliers-grid" *ngIf="rows.length > 0; else noSuppliers">
+  <mat-card class="customer-card" *ngFor="let customer of rows">
+    <mat-card-content>
+      <div class="customer-header d-flex justify-content-between align-items-center">
+      
+        <div class="customer-name">
+          {{ customer.name }}
+        </div>
+      
+        <div>
+          <button mat-icon-button (click)="openModal(customer)" matTooltip="Edit">
+            <mat-icon>edit</mat-icon>
+          </button>
+      
+          <button mat-icon-button color="warn" (click)="remove(customer)" matTooltip="Delete">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      
+      </div>
+
+      <div class="customer-contact" *ngIf="customer.phone">
+        <mat-icon>call</mat-icon>
+        <span>{{ customer.phone }}</span>
+      </div>
+
+      <div class="customer-contact" *ngIf="customer.email">
+        <mat-icon>email</mat-icon>
+        <span>{{ customer.email }}</span>
+      </div>
+
+      <div class="customer-contact" *ngIf="customer.address">
+        <mat-icon>place</mat-icon>
+        <span>{{ customer.address }}</span>
+      </div>
+
+      <div class="customer-notes" *ngIf="customer.loyaltyPoints">
+        <div class="notes-label">Loyalty Points:</div>
+        <div class="notes-content">{{ customer.loyaltyPoints }}</div>
+      </div>
+      <div class="customer-notes" *ngIf="customer.balance > 0">
+        <div class="notes-label" style="color:#d32f2f">Outstanding Balance:</div>
+        <div class="notes-content" style="color:#d32f2f;font-weight:600">Rs. {{ customer.balance | number:'1.2-2' }}</div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<ng-template #noSuppliers>
+  <div class="empty-suppliers">
+    <mat-icon>local_shipping</mat-icon>
+    <h3>No Customer yet</h3>
+    <p>Add customers to track loyalty and share invoices.</p>
+    <button mat-raised-button color="primary" (click)="openModal()">
+      <mat-icon>add</mat-icon>
+      Add First Customer
+    </button>
+  </div>
+</ng-template>
+
+<!-- Add/Edit Supplier Modal -->
+<ng-template #supplierDialog>
+  <h2 mat-dialog-title>
+    <mat-icon>{{ editing ? 'edit' : 'add_business' }}</mat-icon>
+    {{ editing ? 'Edit Customer' : 'Add New Customer' }}
+  </h2>
+  <mat-dialog-content>
+    <form [formGroup]="form" class="customer-form">
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Supplier Name *</mat-label>
+          <input matInput formControlName="name" placeholder="Enter customer name" required />
+          <mat-icon matPrefix>business</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row-split">
+        <mat-form-field appearance="outline">
+          <mat-label>Phone *</mat-label>
+          <input type="number" matInput formControlName="phone" placeholder="Phone number" required/>
+          <mat-icon matPrefix>call</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" type="email" placeholder="Email address" />
+          <mat-icon matPrefix>email</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Address</mat-label>
+          <textarea matInput formControlName="address" rows="2" placeholder="Full address" required></textarea>
+          <mat-icon matPrefix>place</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Loyalty Points</mat-label>
+          <input type="number" matInput formControlName="loyaltyPoints"  pattern="[0-9]" placeholder="Enter points between 0 and 9" (input)="limitToOneDigit($event)">
+          <mat-icon matPrefix>loyaltyPoints</mat-icon>
+        </mat-form-field>
+      </div>
+    </form>
+  </mat-dialog-content>
+  <mat-dialog-actions>
+    <button mat-stroked-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary" (click)="save()" [disabled]="form.invalid">
+      <mat-icon>{{ editing ? 'save' : 'add' }}</mat-icon>
+      {{ editing ? 'Update Customer' : 'Add Customer' }}
+    </button>
+  </mat-dialog-actions>
+</ng-template>

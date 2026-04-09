@@ -1,0 +1,249 @@
+/* ============================================
+   PROFESSIONAL SUPPLIER MANAGEMENT STYLES
+   ============================================ */
+
+.suppliers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  padding: 4px;
+}
+
+.supplier-card {
+  border-radius: 12px !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.3s ease;
+  overflow: hidden;
+
+  &:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12) !important;
+    transform: translateY(-2px);
+  }
+
+  mat-card-content {
+    padding: 20px !important;
+  }
+}
+
+.supplier-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.06);
+}
+
+.supplier-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--app-text, #0f172a);
+  line-height: 1.3;
+  flex: 1;
+}
+
+.supplier-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: 12px;
+
+  button {
+    width: 36px;
+    height: 36px;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+.supplier-contact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: var(--app-text, #0f172a);
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #4f46e5;
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
+}
+
+.supplier-notes {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+
+  .notes-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    margin-bottom: 6px;
+  }
+
+  .notes-content {
+    font-size: 13px;
+    color: var(--app-text, #0f172a);
+    line-height: 1.5;
+  }
+}
+
+/* Empty State */
+.empty-suppliers {
+  text-align: center;
+  padding: 100px 20px;
+  color: #64748b;
+
+  mat-icon {
+    font-size: 80px;
+    width: 80px;
+    height: 80px;
+    opacity: 0.2;
+    margin-bottom: 24px;
+  }
+
+  h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--app-text, #0f172a);
+  }
+
+  p {
+    font-size: 14px;
+    margin: 0 0 24px 0;
+  }
+
+  button {
+    font-size: 15px;
+    font-weight: 600;
+    height: 48px;
+    padding: 0 24px;
+  }
+}
+
+/* Modal Styles */
+mat-dialog-container {
+  .mat-mdc-dialog-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 24px !important;
+    padding-bottom: 16px;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.06);
+
+    mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+      color: #4f46e5;
+    }
+  }
+}
+
+.supplier-form {
+  .form-row, .form-row-split {
+    margin-bottom: 16px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .form-row {
+    .full-width {
+      width: 100%;
+    }
+  }
+
+  .form-row-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  mat-form-field {
+    mat-icon[matPrefix] {
+      margin-right: 12px;
+      color: #64748b;
+    }
+  }
+}
+
+mat-dialog-content {
+  padding: 24px !important;
+  max-height: 70vh;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+  }
+}
+
+mat-dialog-actions {
+  padding: 16px 24px !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+
+  button {
+    min-width: 120px;
+    height: 42px;
+    font-weight: 600;
+
+    mat-icon {
+      margin-right: 6px;
+    }
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .suppliers-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .supplier-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .supplier-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-left: 0;
+  }
+}

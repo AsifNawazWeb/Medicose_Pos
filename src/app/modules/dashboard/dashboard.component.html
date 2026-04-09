@@ -1,0 +1,292 @@
+<app-page-header title="Dashboard" subtitle="Real-time overview of sales, stock and performance">
+  <button mat-raised-button color="primary" routerLink="/pos">
+    <mat-icon>point_of_sale</mat-icon>
+    New Bill
+  </button>
+</app-page-header>
+
+
+
+<!-- Stats Cards Grid -->
+<div class="row d-flex justify-content-center align-items-center">
+  <div class="col-12 col-md-6 col-lg-2 my-3">
+    <mat-card class="stat-card stat-success" *ngIf="stats">
+      <div class="stat-icon">
+        <mat-icon>receipt_long</mat-icon>
+      </div>
+      <div class="stat-content text-center">
+        <div class="stat-value text-center py-2">{{ stats.sales.count }}</div>
+        <div class="stat-label">Total Sales</div>
+        <div class="stat-subtitle">Invoices processed</div>
+      </div>
+    </mat-card>
+  </div>
+
+  <div class="col-12 col-md-6 col-lg-2 my-3">
+    <mat-card class="stat-card stat-primary" *ngIf="stats">
+      <div class="stat-icon text-center">
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value text-center py-2">Rs. {{ stats.sales.revenue | number:'1.2-2' }}</div>
+        <div class="stat-label text-center ">Revenue</div>
+        <div class="stat-subtitle text-center">Total earnings</div>
+      </div>
+    </mat-card>
+  </div>
+
+  <div class="col-12 col-md-6 col-lg-2 my-3">
+    <mat-card class="stat-card stat-warning" *ngIf="stats">
+      <div class="stat-icon">
+        <mat-icon>warning</mat-icon>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value text-center py-2">{{ stats.lowStock.count }}</div>
+        <div class="stat-label text-center">Low Stock</div>
+        <div class="stat-subtitle">Need reordering</div>
+      </div>
+    </mat-card>
+  </div>
+
+  <div class="col-12 col-md-6 col-lg-2 my-3">
+    <mat-card class="stat-card stat-expiring" *ngIf="stats">
+      <div class="stat-icon">
+        <mat-icon>schedule</mat-icon>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value text-center py-2">{{ stats.expiring.count }}</div>
+        <div class="stat-label text-center">Expiring Soon</div>
+        <div class="stat-subtitle">Within 30 days</div>
+      </div>
+    </mat-card>
+  </div>
+
+  <div class="col-12 col-md-6 col-lg-2 my-3">
+    <mat-card class="stat-card stat-danger" *ngIf="stats">
+      <div class="stat-icon">
+        <mat-icon>inventory</mat-icon>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value text-center py-2">{{ stats?.outOfStock?.count ? stats.outOfStock.count : 0}}</div>
+        <div class="stat-label text-center">Out of Stock</div>
+        <div class="stat-subtitle">Immediate attention</div>
+      </div>
+    </mat-card>
+  </div>
+
+  <div class="col-12 col-md-6 col-lg-2 my-3">
+    <mat-card class="stat-card stat-info" *ngIf="stats">
+      <div class="stat-icon">
+        <mat-icon>inventory_2</mat-icon>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value text-center py-2">{{ stats?.activeProducts?.count ? stats.activeProducts.count : 0}}
+        </div>
+        <div class="stat-label text-center">Active Products</div>
+        <div class="stat-subtitle text-center">In inventory</div>
+      </div>
+    </mat-card>
+  </div>
+</div>
+
+
+<!-- Main Content Grid -->
+<div class="row d-flex justify-content-center align-items-center">
+  <div class="col-12 col-md-6 col-lg-6 my-3">
+    <mat-card class="content-card chart-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon class="header-icon">show_chart</mat-icon>
+          Sales Overview (Last 7 Days)
+        </mat-card-title>
+        <div class="legend">
+          <span class="legend-item">
+            <span class="legend-dot"></span>
+            Sales
+          </span>
+        </div>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="chart-wrapper" *ngIf="salesChartData; else noChartData">
+          <canvas baseChart [data]="salesChartData" [options]="salesChartOptions" [type]="'line'">
+          </canvas>
+        </div>
+        <ng-template #noChartData>
+          <div class="empty-state">
+            <mat-icon>trending_up</mat-icon>
+            <p>No sales data available</p>
+          </div>
+        </ng-template>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="col-12 col-md-6 col-lg-6 my-3">
+    <mat-card class="content-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon class="header-icon">star</mat-icon>
+          Top Products
+        </mat-card-title>
+        <mat-card-subtitle>Best-selling items by quantity</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="chart-wrapper top-products-chart" *ngIf="bar?.datasets?.length">
+          <canvas baseChart [data]="bar" [options]="barOptions" [type]="'bar'"></canvas>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
+
+
+<!-- Main Content Grid -->
+<div class="row d-flex justify-content-center align-items-center">
+  <div class="col-12 col-md-6 col-lg-6 my-3">
+    <div class="dashboard-tran-card">
+      <!-- Recent Transactions -->
+      <mat-card class="content-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon class="header-icon">receipt</mat-icon>
+            Recent Transactions
+          </mat-card-title>
+          <button mat-button color="primary" routerLink="/sales" class="view-all-btn">View All</button>
+        </mat-card-header>
+        <mat-card-content class="scroll-content">
+          <div class="transactions-list"
+            *ngIf="recentTransactions && recentTransactions.length > 0; else noTransactions">
+            <div class="transaction-item" *ngFor="let trans of recentTransactions">
+              <div class="trans-info">
+                <div class="trans-id">Bill #{{ trans.invoiceNo }}</div>
+                <div class="trans-date">{{ trans.createdAt | date:'dd/MM/yyyy, h:mm a' }}</div>
+              </div>
+              <div class="trans-amount">Rs. {{ trans.grandTotal | number:'1.2-2' }}</div>
+            </div>
+          </div>
+          <ng-template #noTransactions>
+            <div class="empty-state">
+              <mat-icon>receipt_long</mat-icon>
+              <p>No transactions yet</p>
+            </div>
+          </ng-template>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-6 col-lg-6 my-3">
+    <!-- Low Stock Alerts -->
+    <div class="dashboard-tran-card">
+      <mat-card class="content-card alerts-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon class="header-icon alert-icon">notification_important</mat-icon>
+            Low Stock Alerts
+          </mat-card-title>
+          <button mat-button color="primary" routerLink="/products" class="view-all-btn">Manage</button>
+        </mat-card-header>
+        <mat-card-content class="scroll-content">
+          <div class="alerts-list" *ngIf="lowStockItems && lowStockItems.length > 0; else noAlerts">
+            <div class="alert-item" *ngFor="let item of lowStockItems">
+              <div class="alert-icon-wrapper">
+                <mat-icon class="alert-status-icon">error</mat-icon>
+              </div>
+              <div class="alert-info">
+                <div class="alert-name">{{ item.name }}</div>
+                <div class="alert-stock">Only {{ item.stockQty }} units left • Min: {{ item.reorderLevel }}</div>
+              </div>
+            </div>
+          </div>
+          <ng-template #noAlerts>
+            <div class="empty-state">
+              <mat-icon>check_circle</mat-icon>
+              <p>All items in stock</p>
+            </div>
+          </ng-template>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- <mat-card class="content-card quick-actions-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon class="header-icon">bolt</mat-icon>
+          Quick Actions
+        </mat-card-title>
+        <mat-card-subtitle>Frequently used features</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="quick-actions">
+          <button mat-raised-button color="primary" routerLink="/pos" class="action-btn">
+            <mat-icon>point_of_sale</mat-icon>
+            <span>New Bill</span>
+          </button>
+          <button mat-raised-button routerLink="/products" class="action-btn">
+            <mat-icon>inventory_2</mat-icon>
+            <span>Manage Inventory</span>
+          </button>
+          <button mat-raised-button routerLink="/reports" class="action-btn">
+            <mat-icon>analytics</mat-icon>
+            <span>View Reports</span>
+          </button>
+          <button mat-raised-button routerLink="/suppliers" class="action-btn">
+            <mat-icon>local_shipping</mat-icon>
+            <span>Suppliers</span>
+          </button>
+          <button mat-raised-button routerLink="/customers" class="action-btn">
+            <mat-icon>people</mat-icon>
+            <span>Customers</span>
+          </button>
+          <button mat-raised-button routerLink="/settings" class="action-btn">
+            <mat-icon>settings</mat-icon>
+            <span>Settings</span>
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card> -->
+  </div>
+</div>
+
+
+<div class="row d-flex justify-content-center align-items-center">
+  <div class="col-12 col-md-12 col-lg-12 my-3">
+    <mat-card class="content-card quick-actions-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon class="header-icon">bolt</mat-icon>
+          Quick Actions
+        </mat-card-title>
+        <mat-card-subtitle>Frequently used features</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="quick-actions">
+          <button mat-raised-button color="primary" routerLink="/pos" class="action-btn">
+            <mat-icon>point_of_sale</mat-icon>
+            <span>New Bill</span>
+          </button>
+          <button mat-raised-button routerLink="/products" class="action-btn">
+            <mat-icon>inventory_2</mat-icon>
+            <span>Manage Inventory</span>
+          </button>
+          <button mat-raised-button routerLink="/reports" class="action-btn">
+            <mat-icon>analytics</mat-icon>
+            <span>View Reports</span>
+          </button>
+          <button mat-raised-button routerLink="/suppliers" class="action-btn">
+            <mat-icon>local_shipping</mat-icon>
+            <span>Suppliers</span>
+          </button>
+          <button mat-raised-button routerLink="/customers" class="action-btn">
+            <mat-icon>people</mat-icon>
+            <span>Customers</span>
+          </button>
+          <button mat-raised-button routerLink="/settings" class="action-btn">
+            <mat-icon>settings</mat-icon>
+            <span>Settings</span>
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

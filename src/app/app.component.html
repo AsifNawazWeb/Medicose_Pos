@@ -1,0 +1,114 @@
+<a class="skip-link" href="#main">Skip to content</a>
+
+<mat-sidenav-container class="shell">
+  <mat-sidenav #snav class="side" mode="side" opened>
+    <!-- Brand Header -->
+    <div class="brand">
+      <div class="logo" aria-hidden="true">⚕️</div>
+      <div>
+        <div class="title">Medical POS</div>
+        <div class="sub">Professional Edition</div>
+      </div>
+    </div>
+
+    <!-- Main Navigation -->
+    <mat-nav-list aria-label="Primary navigation">
+      <a mat-list-item routerLink="/dashboard" routerLinkActive="active" class="slide-in">
+        <mat-icon>dashboard</mat-icon>
+        <span>Dashboard</span>
+      </a>
+      <a mat-list-item routerLink="/pos" routerLinkActive="active" class="slide-in">
+        <mat-icon>point_of_sale</mat-icon>
+        <span>New Bill / POS</span>
+      </a>
+      <a mat-list-item routerLink="/products" routerLinkActive="active" class="slide-in">
+        <mat-icon>inventory_2</mat-icon>
+        <span>Inventory</span>
+      </a>
+      <a mat-list-item routerLink="/sales" routerLinkActive="active" class="slide-in">
+        <mat-icon>receipt_long</mat-icon>
+        <span>Sales History</span>
+      </a>
+      <a mat-list-item routerLink="/suppliers" routerLinkActive="active" class="slide-in">
+        <mat-icon>local_shipping</mat-icon>
+        <span>Suppliers</span>
+      </a>
+      <a mat-list-item routerLink="/customers" routerLinkActive="active" class="slide-in">
+        <mat-icon>people</mat-icon>
+        <span>Customers</span>
+      </a>
+      <a mat-list-item routerLink="/purchase-orders" routerLinkActive="active" class="slide-in">
+        <mat-icon>shopping_cart</mat-icon>
+        <span>Purchase Orders</span>
+      </a>
+      <!-- <a mat-list-item routerLink="/returns" routerLinkActive="active" class="slide-in">
+        <mat-icon>undo</mat-icon>
+        <span>Returns</span>
+      </a> -->
+      <a mat-list-item routerLink="/reports" routerLinkActive="active" class="slide-in">
+        <mat-icon>analytics</mat-icon>
+        <span>Reports</span>
+      </a>
+      <a mat-list-item routerLink="/settings" routerLinkActive="active" class="slide-in">
+        <mat-icon>settings</mat-icon>
+        <span>Settings</span>
+      </a>
+    </mat-nav-list>
+
+    <!-- Footer -->
+    <div class="foot">
+      <div class="muted">v{{ auth.version }}</div>
+      <div class="badge">PRO</div>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="content">
+    <!-- Top Toolbar -->
+    <mat-toolbar class="top" role="banner">
+      <button mat-icon-button (click)="snav.toggle()" aria-label="Toggle navigation">
+        <mat-icon>menu</mat-icon>
+      </button>
+
+      <span class="spacer"></span>
+
+      <!-- Theme Toggle -->
+      <button 
+        mat-icon-button 
+        class="theme-toggle"
+        (click)="toggleTheme()" 
+        [attr.aria-label]="theme.current === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+        matTooltip="{{ theme.current === 'dark' ? 'Light mode' : 'Dark mode' }}">
+        <mat-icon>{{ theme.current === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
+
+      <!-- User Menu -->
+      <ng-container *ngIf="auth.isLoggedIn$ | async">
+        <button 
+          mat-button 
+          class="user-menu-btn"
+          [matMenuTriggerFor]="menu" 
+          aria-label="Open user menu">
+          <mat-icon>account_circle</mat-icon>
+          <span class="ml8">{{ (auth.user$ | async)?.name || 'User' }}</span>
+          <mat-icon>arrow_drop_down</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu" xPosition="before">
+          <button mat-menu-item routerLink="/settings/security">
+            <mat-icon>security</mat-icon>
+            <span>Security</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="logout()">
+            <mat-icon color="warn">logout</mat-icon>
+            <span>Logout</span>
+          </button>
+        </mat-menu>
+      </ng-container>
+    </mat-toolbar>
+
+    <!-- Main Content Area -->
+    <main id="main" class="main" tabindex="-1">
+      <router-outlet></router-outlet>
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

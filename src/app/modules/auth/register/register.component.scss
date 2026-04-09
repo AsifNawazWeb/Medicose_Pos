@@ -1,0 +1,15 @@
+.wrap{
+  height: calc(100vh - 40px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.card{
+  width: min(420px, 92vw);
+}
+.full{ width: 100%; }
+.row{
+  margin-top: 12px;
+  text-align:center;
+  color: var(--app-muted);
+}
