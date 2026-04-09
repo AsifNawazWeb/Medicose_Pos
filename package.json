@@ -4,7 +4,7 @@
   "private": true,
   "description": "Medical Store POS (Angular + Node.js + SQLite + Electron) - accessible and reliable.",
   "main": "electron/main.js",
-  "author": "",
+  "author": "Asif <asif@example.com>",
   "license": "MIT",
   "engines": {
     "node": ">=18.18.0"
@@ -20,7 +20,8 @@
     "server": "node backend/src/server.js",
     "build": "ng build renderer --configuration production --base-href ./",
     "start": "node scripts/start-electron.js",
-    "build-win": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -w --x64"
+    "build-win": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -w --x64",
+    "build-linux": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -l --x64"
   },
   "dependencies": {
     "@angular/animations": "^17.3.12",
@@ -96,6 +97,16 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "executableArgs": [
+        "--no-sandbox"
+      ],
+      "category": "Office"
     }
   }
 }

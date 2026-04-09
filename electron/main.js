@@ -4,6 +4,9 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
+// Disable sandbox for Linux to prevent SIGTRAP crashes on AppArmor
+app.commandLine.appendSwitch('no-sandbox');
+
 const isDev = !app.isPackaged;
 
 const userDataPath = app.getPath('userData');
