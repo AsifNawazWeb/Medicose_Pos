@@ -35,8 +35,8 @@ npm run build-win       # Build Windows .exe
 ---
 
 ## 🔐 Default Login
-- **Email:** `admin@local`
-- **Password:** `Admin@123`
+- **Email:** `test@store.com`
+- **Password:** `TestPass123`
 
 ⚠️ **Important:** Change the password from **Settings → Security** after first login.
 
