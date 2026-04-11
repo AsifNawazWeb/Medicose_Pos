@@ -1,144 +1,69 @@
-# 🏥 Medical POS System - Professional Edition v2.0
-## (Angular + Node.js + SQLite + Electron)
+# Medical POS System
 
-> **New in v2.0:** Complete UI/UX redesign with professional medical theme, enhanced user experience, and modern design system. See [UI/UX_ENHANCEMENTS.md](./UI_UX_ENHANCEMENTS.md) for full details.
+## About the Project
 
----
+A comprehensive, full-featured Point of Sale (POS) system designed specifically for medical stores, pharmacies, and clinics. This application offers a robust set of tools to manage daily operations, including inventory and stock tracking, sales processing, customer and supplier management, and comprehensive automated reporting. The user interface is built around a professional, medical-themed design system, ensuring an accessible, intuitive, and highly responsive user experience across different screen sizes.
 
-## ✨ What's New in v2.0
+By combining modern web technologies with native desktop application capabilities, it operates gracefully offline with local database storage, automatic daily backups, and direct hardware integrations like USB barcode scanners and thermal receipt printers. Whether acting as a standalone checkout terminal or part of a broader local architecture, this POS system simplifies complex pharmacy workflows into efficient, manageable tasks.
 
-- 🎨 **Professional Design System** - Medical-themed color palette with teal and blue
-- 🚀 **Enhanced UX** - Smooth animations, better interactions, improved workflow
-- 📱 **Responsive Design** - Optimized for all devices with 4 breakpoints
-- ♿ **WCAG 2.1 AA** - Full accessibility compliance
-- 🎯 **Better Visual Hierarchy** - Clear, professional interface
-- 🌓 **Improved Dark Mode** - Better contrast and readability
-- ⚡ **Performance** - Optimized animations and rendering
+## How to Run Locally 
 
----
+If you have cloned the project from GitHub and want to run it on your system for development, you'll need **Node.js** (v18.18.0 or higher) installed on your operating system.
 
-## 🚀 Quick Start
+Here are the step-by-step instructions to get the application running:
 
+1. **Install Dependencies**  
+   Open your terminal inside the cloned project directory and run:
+   ```bash
+   npm install
+   ```
+   This will install all required dependencies for the frontend (Angular), backend (Express), and the desktop wrapper (Electron). *Note: Native database modules like `better-sqlite3` will automatically rebuild for your system architecture during the post-install phase.*
+
+2. **Initialize the Database**  
+   Run the following command once to set up the local SQLite database schema and generate the initial default user:
+   ```bash
+   npm run init-db
+   ```
+   *Default Login Credentials:*
+   - **Email:** `test@store.com`
+   - **Password:** `TestPass123` 
+   *(Note: Please change this password from Settings → Security after your first login)*
+
+3. **Start the Application**  
+   To spin up the development environment—which concurrently starts the local Express REST API, the Angular renderer, and the Electron desktop window—run:
+   ```bash
+   npm run dev
+   ```
+
+## Creating Executables (.exe and .deb)
+
+To convert this development project into production-ready executable files for installation on end-user machines, the application uses `electron-builder`.
+
+Depending on your target operating system, run the respective command below. The resulting executable files will be generated inside the `release` folder located at the root of the project.
+
+**For Windows (.exe):**
 ```bash
-npm install              # Install dependencies (once)
-npm run init-db         # Create database (once)
-npm run dev             # Start application (Angular + API + Electron)
+npm run build-win
 ```
+*This command bundles the Angular frontend and backend processes, then packages them into a standard Windows NSIS installer (`.exe`).*
 
-Alternative commands:
+**For Linux (.deb / AppImage):**
 ```bash
-npm run server          # Server only
-npm start               # Electron only (starts API automatically)
-npm run build-win       # Build Windows .exe
+npm run build-linux
 ```
+*This command compiles and packages the application into both an `.AppImage` (portable executable) and a `.deb` Debian package file.*
 
----
+## Architecture and Technology Stack
 
-## 🔐 Default Login
-- **Email:** `test@store.com`
-- **Password:** `TestPass123`
+### Application Architecture
+The application uses a hybrid approach, combining a Client-Server web model wrapped seamlessly inside an Electron desktop app to provide a persistent local installation:
+- **Renderer Process (Frontend):** Handles all visual layouts, user interactions, and view states using a Single Page Application (SPA) architecture. It communicates with the local API server via standard HTTP RESTful requests.
+- **Main Process (Desktop Layer):** Electron manages the native desktop integration, application windows, file system access, and hardware interaction. It isolates the renderer UI from lower-level APIs to enhance application security (Strict Context Isolation).
+- **Local API Server (Backend):** A standalone Node.js Express server boots alongside your Electron app in the background. It executes core business logic, issues JWT-based authentication tokens, and performs direct queries against the database.
+- **Embedded Database:** Employs a local, file-based SQLite database. Storing data entirely structure-side removes the need for an active internet connection or complex external database configurations. 
 
-⚠️ **Important:** Change the password from **Settings → Security** after first login.
-
----
-
-## 📋 Features
-
-### Core Functionality
-- ✅ Point of Sale (POS) with barcode scanning
-- ✅ Inventory management
-- ✅ Sales tracking and history
-- ✅ Customer management
-- ✅ Supplier management
-- ✅ Purchase order management
-- ✅ Returns processing
-- ✅ Comprehensive reporting
-- ✅ Thermal receipt printing
-- ✅ WhatsApp integration
-- ✅ User authentication & security
-- ✅ Automatic database backups
-
-### New UI/UX Features
-- ✨ Professional medical theme
-- ✨ Color-coded status indicators
-- ✨ Animated statistics cards
-- ✨ Enhanced data visualization
-- ✨ Smooth page transitions
-- ✨ Improved form validation
-- ✨ Better empty states
-- ✨ Professional typography
-
----
-
-## 💻 Technology Stack
-
-### Frontend
-- **Angular 17** - Modern framework
-- **Material Design** - Professional UI components
-- **Chart.js** - Data visualization
-- **SCSS** - Advanced styling with design system
-- **TypeScript** - Type-safe development
-
-### Backend
-- **Node.js** - Runtime environment
-- **Express** - Web framework
-- **SQLite** (better-sqlite3) - Embedded database
-- **JWT** - Secure authentication
-- **bcrypt** - Password hashing
-
-### Desktop
-- **Electron** - Cross-platform desktop app
-- **Secure preload** - Context isolation enabled
-
----
-
-## 📝 Notes
-
-### Database
-- **Location:** `data/medical_pos.sqlite`
-- **Backups:** Automatic daily at 11:00 PM to `backups/`
-- **Migration:** No changes needed from v1 to v2
-
-### Hardware
-- **Barcode Scanner:** Works as keyboard input (USB scanner types barcode)
-- **Thermal Printer:** Uses Windows installed printer via Electron
-- **Silent Printing:** Supported for fast checkout
-
-### Design System
-- **Colors:** CSS custom properties for easy theming
-- **Spacing:** 6-level scale (4px to 48px)
-- **Typography:** Inter font with 5 weights
-- **Shadows:** 4 elevation levels
-- See [UI/UX_ENHANCEMENTS.md](./UI_UX_ENHANCEMENTS.md) for customization
-
----
-
-## 🔄 Upgrading from v1
-
-1. Backup your database (`data/medical_pos.sqlite`)
-2. Replace files with v2
-3. Keep your database file
-4. Run `npm install` (if dependencies changed)
-5. Start the app - everything works!
-
-**No migration needed** - v2 is fully backward compatible!
-
----
-
-## 📚 Documentation
-
-- [UI/UX Enhancements](./UI_UX_ENHANCEMENTS.md) - Complete design documentation
-- [Changelog](./CHANGELOG_UI_UX.md) - Detailed list of improvements
-- Code comments throughout the project
-
----
-
-## 📄 License
-
-MIT License - Free to use and modify
-
----
-
-**Version:** 2.0.0 Professional Edition  
-**Status:** ✅ Production Ready  
-**Last Updated:** February 2026
+### Technology Stack
+- **Frontend Stack:** Angular 17, Material Design components, Chart.js (for data visualization), SCSS (for the custom medical design system), and TypeScript.
+- **Backend Stack:** Node.js runtime, Express web framework, bcryptjs (for strict password hashing), and JSON Web Tokens (JWT) for secure session handling.
+- **Database:** SQLite via the `better-sqlite3` library, offering high-performance, synchronous data reads/writes directly to the local filesystem (`data/medical_pos.sqlite`).
+- **Desktop Wrapper:** Electron and `electron-builder` for final packaging.
