@@ -10,15 +10,16 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class LoginComponent {
   loading = false;
+  hide = true;
   form: any
 
- 
+
 
   constructor(private fb: FormBuilder, private api: ApiService, private auth: AuthService, private router: Router) {
     this.form = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
-  });
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+    });
   }
 
   submit() {
