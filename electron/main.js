@@ -3,6 +3,7 @@ const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const { autoUpdater } = require('electron-updater');
 
 // Disable sandbox for Linux to prevent SIGTRAP crashes on AppArmor
 app.commandLine.appendSwitch('no-sandbox');
@@ -99,10 +100,21 @@ function createWindow() {
   });
 }
 
+// Auto updater logging
+autoUpdater.on('checking-for-update', () => console.log('[auto-updater] Checking for update...'));
+autoUpdater.on('update-available', (info) => console.log('[auto-updater] Update available:', info.version));
+autoUpdater.on('update-not-available', () => console.log('[auto-updater] Update not available.'));
+autoUpdater.on('error', (err) => console.error('[auto-updater] Error:', err));
+autoUpdater.on('download-progress', (progress) => console.log(`[auto-updater] Downloaded ${progress.percent}%`));
+autoUpdater.on('update-downloaded', () => console.log('[auto-updater] Update downloaded'));
+
 app.whenReady().then(async () => {
   if (!isDev) {
     try { await startBackend(); }
     catch (e) { console.error('[main] backend failed to start:', e); }
+    
+    // Check for updates if running in production
+    autoUpdater.checkForUpdatesAndNotify();
   }
   createWindow();
   app.on('activate', () => {
