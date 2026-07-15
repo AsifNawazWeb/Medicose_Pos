@@ -135,10 +135,28 @@ ipcMain.handle('app:openExternal', async (_evt, url) => {
   await shell.openExternal(url);
   return true;
 });
-ipcMain.handle('print:receipt', async (_evt, html) => {
+ipcMain.handle('print:receipt', async (_evt, html, options = {}) => {
+  const silent = options?.silent !== false; // default to silent (direct print)
+
+  const printWin = new BrowserWindow({
+    show: false,
+    width: 302,   // ~80mm at 96 DPI
+    height: 800,
+    webPreferences: { contextIsolation: true, nodeIntegration: false },
+  });
+
   const tmpHtml = path.join(os.tmpdir(), `receipt_${Date.now()}.html`);
   try { fs.writeFileSync(tmpHtml, html, 'utf-8'); }
   catch { return { success: false, failureReason: 'Failed to write temp file' }; }
-  await shell.openPath(tmpHtml);
-  return { success: true, failureReason: null };
+
+  await printWin.loadFile(tmpHtml);
+
+  return new Promise((resolve) => {
+    printWin.webContents.print({ silent, printBackground: true }, (success, failureReason) => {
+      printWin.close();
+      // Clean up temp file
+      try { fs.unlinkSync(tmpHtml); } catch {}
+      resolve({ success, failureReason: failureReason || null });
+    });
+  });
 });

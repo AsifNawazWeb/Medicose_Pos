@@ -7,7 +7,7 @@ const User = require('../models/user.model');
 const { getDb } = require('../config/db');
 
 const loginSchema = z.object({
-  email:    z.string().email(),
+  email:    z.string().min(3),
   password: z.string().min(6),
 });
 

@@ -335,9 +335,11 @@ export class PosComponent implements OnInit {
     if (!this.lastSale) return;
     const html = this.receipt.buildHtml({ ...this.lastSale, ...this.settings });
     try {
-      const res = await (window as any).medpos?.printReceipt?.(html, { silent: false });
-      if (res?.success) return;
+      const res = await (window as any).medpos?.printReceipt?.(html, { silent: true });
+      if (res?.success) { this.toast.success('Receipt printed!'); return; }
+      if (res && !res.success) { this.toast.error('Print failed: ' + (res.failureReason || 'Unknown error')); return; }
     } catch { }
+    // Fallback for dev mode (browser) only
     const w = window.open('', '_blank', 'width=420,height=640,menubar=no,toolbar=no,location=no');
     if (w) { w.document.write(html); w.document.close(); }
     else this.toast.error('Please allow popups to print receipts');
