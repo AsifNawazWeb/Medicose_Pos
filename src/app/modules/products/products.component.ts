@@ -1,11 +1,13 @@
-import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
+import { Component, OnInit, ViewChild, TemplateRef, OnDestroy } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 @Component({ templateUrl: './products.component.html', styleUrls: ['./products.component.scss'] })
-export class ProductsComponent implements OnInit {
+export class ProductsComponent implements OnInit, OnDestroy {
   @ViewChild('productDialog') productDialog!: TemplateRef<any>;
   @ViewChild('qtyDialog') qtyDialog!: TemplateRef<any>;
 
@@ -23,6 +25,9 @@ export class ProductsComponent implements OnInit {
   editingProduct: any = null;
   newQty: number = 0;
   form: any;
+
+  private searchSubject = new Subject<string>();
+  private destroy$ = new Subject<void>();
 
   displayedColumns = ['name', 'category', 'shelf', 'batchNo', 'stock', 'price', 'expiryDate', 'status', 'actions'];
 
@@ -53,7 +58,69 @@ export class ProductsComponent implements OnInit {
   ngOnInit() {
     this.createShelfArray()
     this.load();
+
+    // Debounced search with barcode detection
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(query => {
+      this.performSearch(query);
+    });
+
     this.api.get<any>('/suppliers').subscribe(r => this.suppliers = r.data || []);
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  /** Called from template on (input) — feeds the debounced subject */
+  onSearchInput(value: string) {
+    this.q = value;
+    this.searchSubject.next(value.trim());
+  }
+
+  /**
+   * Performs the actual search. If the query looks like a barcode (all digits,
+   * length >= 8), first tries the exact scan endpoint. On exact match, opens
+   * the product in edit mode. Otherwise falls back to the generic LIKE search.
+   */
+  private performSearch(query: string) {
+    if (!query) {
+      this.api.get<any>('/products', { q: '', category: this.categoryFilter })
+        .subscribe(r => { this.rows = r.data || []; this.applyStockFilter(); });
+      return;
+    }
+
+    // Detect barcode-like input: all digits, at least 8 characters
+    const isBarcodeLike = /^\d{8,}$/.test(query);
+
+    if (isBarcodeLike) {
+      // Try exact barcode match first
+      this.api.get<any>(`/products/scan/${encodeURIComponent(query)}`).subscribe({
+        next: (r) => {
+          if (r?.data) {
+            // Exact barcode match — open product in edit mode
+            this.rows = [r.data];
+            this.applyStockFilter();
+            this.openModal(r.data);
+            return;
+          }
+          // No exact match — fall back to LIKE search
+          this.doGenericSearch(query);
+        },
+        error: () => this.doGenericSearch(query)
+      });
+    } else {
+      this.doGenericSearch(query);
+    }
+  }
+
+  private doGenericSearch(query: string) {
+    this.api.get<any>('/products', { q: query, category: this.categoryFilter })
+      .subscribe(r => { this.rows = r.data || []; this.applyStockFilter(); });
   }
 
   load() {

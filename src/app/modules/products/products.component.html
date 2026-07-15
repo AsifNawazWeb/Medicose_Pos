@@ -8,7 +8,7 @@
       <mat-form-field appearance="outline" class="full">
         <mat-label>Search inventory...</mat-label>
         <mat-icon matPrefix>search</mat-icon>
-        <input matInput [(ngModel)]="q" (input)="load()" placeholder="Name, barcode, SKU" />
+        <input matInput [(ngModel)]="q" (input)="onSearchInput($any($event.target).value)" placeholder="Name, barcode, SKU" />
       </mat-form-field>
       <mat-form-field appearance="outline" class="cat">
         <mat-label>All Categories</mat-label>

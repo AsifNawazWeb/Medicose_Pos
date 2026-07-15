@@ -42,6 +42,9 @@ export class PosComponent implements OnInit {
   suggestions: any[] = [];
   searching = false;
 
+  // Prevent double-add when autocomplete (optionSelected) and Enter both fire
+  private addingProduct = false;
+
   // Customer
   customerSearchCtrl = new FormControl('');
   customerSuggestions: Customer[] = [];
@@ -130,23 +133,56 @@ export class PosComponent implements OnInit {
   onEnter() {
     const v = String(this.searchCtrl.value || '').trim();
     if (!v) return;
+
+    // If the input looks like a barcode (all digits, ≥8 chars), always scan
+    // directly — don't let autocomplete intercept it.
+    const isBarcodeLike = /^\d{8,}$/.test(v);
+
+    if (!isBarcodeLike && this.suggestions.length > 0) {
+      // Non-barcode input with suggestions visible — let autocomplete handle it
+      return;
+    }
+
     this.scan(v);
   }
 
   scan(code: string) {
-    this.api.get<any>('/products', { q: code, limit: 1 }).subscribe(r => {
-      const products = r.data || [];
-      if (products.length === 0) { this.toast.error('Product not found'); return; }
-      this.selectProduct(products[0]);
+    // Step 1: Try exact barcode match via dedicated scan endpoint
+    this.api.get<any>(`/products/scan/${encodeURIComponent(code)}`).subscribe({
+      next: (r) => {
+        if (r?.data) {
+          // Exact barcode match — add directly to cart
+          this.selectProduct(r.data);
+          return;
+        }
+        // Step 2: Fall back to name/barcode LIKE search
+        this.api.get<any>('/products', { q: code, limit: 1 }).subscribe(r2 => {
+          const products = r2.data || [];
+          if (products.length === 0) { this.toast.error('Product not found'); return; }
+          this.selectProduct(products[0]);
+        });
+      },
+      error: () => {
+        // Scan endpoint failed — fall back to generic search
+        this.api.get<any>('/products', { q: code, limit: 1 }).subscribe(r2 => {
+          const products = r2.data || [];
+          if (products.length === 0) { this.toast.error('Product not found'); return; }
+          this.selectProduct(products[0]);
+        });
+      }
     });
   }
 
   selectProduct(p: any) {
-    if (p.stockQty <= 0) { this.toast.error('Product is out of stock'); return; }
+    // Prevent double-add when both autocomplete and Enter fire
+    if (this.addingProduct) return;
+    this.addingProduct = true;
+
+    if (p.stockQty <= 0) { this.toast.error('Product is out of stock'); this.addingProduct = false; return; }
 
     const existing = this.cart.find(x => x.productId === p.id);
     if (existing) {
-      if (existing.qty + 1 > p.stockQty) { this.toast.warning('Cannot add more than available stock'); return; }
+      if (existing.qty + 1 > p.stockQty) { this.toast.warning('Cannot add more than available stock'); this.addingProduct = false; return; }
       existing.qty++;
       this.recalcItem(existing);
     } else {
@@ -171,6 +207,9 @@ export class PosComponent implements OnInit {
     this.searchCtrl.setValue('', { emitEvent: false });
     this.suggestions = [];
     this.toast.success('Item added to cart');
+
+    // Reset guard after a short delay (allows any pending event to resolve)
+    setTimeout(() => this.addingProduct = false, 100);
   }
 
   /**
