@@ -20,7 +20,7 @@
           <input #barcodeInput matInput [formControl]="searchCtrl" (keydown.enter)="onEnter()" [matAutocomplete]="auto"
             placeholder="Search medicine by name or barcode..." />
           <mat-icon matPrefix>search</mat-icon>
-          <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectProduct($event.option.value)">
+          <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption (optionSelected)="selectProduct($event.option.value)">
             <mat-option *ngIf="searching" disabled>
               <span class="searching-text">Searching...</span>
             </mat-option>

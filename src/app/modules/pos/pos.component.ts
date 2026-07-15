@@ -73,12 +73,21 @@ export class PosComponent implements OnInit {
   ngOnInit() {
     this.api.get<any>('/settings').subscribe(r => this.settings = r.data);
 
-    // Product autocomplete
+    // Product autocomplete — also auto-detects barcode scanner input
     this.searchCtrl.valueChanges.pipe(
-      debounceTime(150), distinctUntilChanged(),
+      debounceTime(150),
       switchMap(v => {
         const q = String(v || '').trim();
         if (q.length < 2) { this.suggestions = []; return of(null); }
+
+        // Auto-detect barcode scanner input: all digits, ≥8 chars
+        // Barcode scanners type very fast — the debounced value will be the
+        // complete barcode. Auto-add to cart without requiring Enter.
+        if (/^\d{8,}$/.test(q)) {
+          this.scan(q);
+          return of(null); // don't show autocomplete for barcodes
+        }
+
         this.searching = true;
         return this.api.get<any>('/products', { q, limit: 10 }).pipe(catchError(() => of({ ok: true, data: [] })));
       })
@@ -134,14 +143,10 @@ export class PosComponent implements OnInit {
     const v = String(this.searchCtrl.value || '').trim();
     if (!v) return;
 
-    // If the input looks like a barcode (all digits, ≥8 chars), always scan
-    // directly — don't let autocomplete intercept it.
-    const isBarcodeLike = /^\d{8,}$/.test(v);
-
-    if (!isBarcodeLike && this.suggestions.length > 0) {
-      // Non-barcode input with suggestions visible — let autocomplete handle it
-      return;
-    }
+    // If autocomplete has suggestions, autoActiveFirstOption will handle
+    // the Enter key via (optionSelected). Only scan directly when there
+    // are no suggestions (e.g. barcode typed faster than debounce).
+    if (this.suggestions.length > 0) return;
 
     this.scan(v);
   }
