@@ -11,7 +11,10 @@ import JsBarcode from 'jsbarcode';
 export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('productDialog') productDialog!: TemplateRef<any>;
   @ViewChild('qtyDialog') qtyDialog!: TemplateRef<any>;
+  @ViewChild('barcodePrintDialog') barcodePrintDialog!: TemplateRef<any>;
   @ViewChild('barcodeSvg') barcodeSvg!: ElementRef<SVGSVGElement>;
+  @ViewChild('printBarcodeSvg') printBarcodeSvg!: ElementRef<SVGSVGElement>;
+  @ViewChild('printFrame') printFrame!: ElementRef<HTMLIFrameElement>;
 
   categories = ['Tablet', 'Capsule', 'Injection', 'Syrup', 'Cream', 'Drops', 'Ointment', 'Powder', 'Strip', 'Other'];
   categoryFilter = '';
@@ -26,6 +29,8 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
   editing: any = null;
   editingProduct: any = null;
   newQty: number = 0;
+  printingProduct: any = null;
+  printBarcodeQty: number = 1;
   form: any;
 
   private searchSubject = new Subject<string>();
@@ -259,6 +264,174 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.editingProduct = row;
     this.newQty = row.stockQty;
     this.dialog.open(this.qtyDialog, { width: '400px', maxWidth: '95vw' });
+  }
+
+  openBarcodePrintModal(row: any) {
+    this.printingProduct = row;
+    this.printBarcodeQty = 1;
+
+    const dialogRef = this.dialog.open(this.barcodePrintDialog, { width: '400px', maxWidth: '95vw' });
+
+    // Render barcode preview in the dialog after it opens
+    dialogRef.afterOpened().subscribe(() => {
+      setTimeout(() => {
+        if (this.printBarcodeSvg && row.barcode) {
+          try {
+            const format = row.barcode.length >= 12 ? 'EAN13' : 'CODE128';
+            JsBarcode(this.printBarcodeSvg.nativeElement, row.barcode, {
+              format: format,
+              width: 2,
+              height: 38,
+              displayValue: true,
+              fontSize: 12,
+              margin: 3,
+              background: '#ffffff',
+            });
+          } catch (e) {
+            // Silently fail
+          }
+        }
+      });
+    });
+  }
+
+  printBarcode() {
+    if (!this.printingProduct || this.printBarcodeQty < 1) {
+      this.toast.warning('Please enter a valid quantity');
+      return;
+    }
+
+    const product = this.printingProduct;
+    const barcode = product.barcode || '';
+    const qty = this.printBarcodeQty;
+    const format = barcode.length >= 12 ? 'EAN13' : 'CODE128';
+
+    // Build SVG barcode as a string
+    const svgContainer = document.createElement('div');
+    const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgContainer.appendChild(svgEl);
+
+    try {
+      JsBarcode(svgEl, barcode, {
+        format: format,
+        width: 2,
+        height: 50,
+        displayValue: true,
+        fontSize: 14,
+        margin: 5,
+        background: '#ffffff',
+      });
+    } catch (e) {
+      this.toast.error('Failed to generate barcode');
+      return;
+    }
+
+    const barcodeSvgHtml = svgContainer.innerHTML;
+
+    // Build labels HTML
+    let labelsHtml = '';
+    for (let i = 0; i < qty; i++) {
+      labelsHtml += `
+        <div class="barcode-label">
+          <div class="label-name">${product.name}</div>
+          ${barcodeSvgHtml}
+          <div class="label-barcode-text">${barcode}</div>
+        </div>
+      `;
+    }
+
+    // Use hidden iframe to print (avoids popup blockers)
+    const iframe = this.printFrame?.nativeElement;
+    if (!iframe) {
+      this.toast.error('Print frame not found');
+      return;
+    }
+
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!iframeDoc) {
+      this.toast.error('Could not access print frame');
+      return;
+    }
+
+    iframeDoc.open();
+    iframeDoc.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Print Barcode Labels</title>
+        <style>
+          @page {
+            margin: 10mm;
+          }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body {
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 10px;
+          }
+          .labels-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-start;
+          }
+          .barcode-label {
+            width: 200px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+          .label-name {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            word-wrap: break-word;
+          }
+          .label-barcode-text {
+            font-size: 11px;
+            margin-top: 4px;
+            color: #333;
+          }
+          .barcode-label svg {
+            max-width: 100%;
+            height: auto;
+          }
+          @media print {
+            body { padding: 0; }
+            .barcode-label { border: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="labels-container">
+          ${labelsHtml}
+        </div>
+        <script>
+          window.onload = function() {
+            window.print();
+            window.onafterprint = function() { window.close(); };
+            // Fallback: close after 30 seconds if print dialog is dismissed
+            setTimeout(function() { window.close(); }, 30000);
+          };
+        <\/script>
+      </body>
+      </html>
+    `);
+
+    iframeDoc.close();
+
+    // Wait for content to load then print
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.print();
+      } catch (e) {
+        this.toast.error('Failed to print. Please try again.');
+      }
+    }, 500);
+
+    this.dialog.closeAll();
   }
 
   save() {

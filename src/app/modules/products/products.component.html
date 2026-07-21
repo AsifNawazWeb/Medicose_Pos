@@ -143,6 +143,11 @@
                 <span>Update Stock</span>
               </button>
 
+              <button mat-menu-item (click)="openBarcodePrintModal(r)">
+                <mat-icon color="primary">print</mat-icon>
+                <span>Print Barcode</span>
+              </button>
+
               <mat-divider></mat-divider>
 
               <button mat-menu-item (click)="remove(r)">
@@ -298,6 +303,34 @@
     <button mat-stroked-button mat-dialog-close>Cancel</button>
     <button mat-raised-button color="primary" (click)="save()" [disabled]="form.invalid">
       {{ editing ? 'Update Medicine' : 'Add Medicine' }}
+    </button>
+  </mat-dialog-actions>
+</ng-template>
+
+<!-- Hidden iframe for printing barcodes (avoids popup blockers) -->
+<iframe #printFrame style="position:absolute;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none" title="Print Frame"></iframe>
+
+<!-- ── BARCODE PRINT MODAL ── -->
+<ng-template #barcodePrintDialog>
+  <h2 mat-dialog-title>Print Barcode Labels</h2>
+  <mat-dialog-content style="padding-top:16px">
+    <div style="margin-bottom:20px">
+      <div style="font-weight:600;font-size:16px;margin-bottom:4px">{{ printingProduct?.name }}</div>
+      <div style="font-size:13px;color:#64748b;margin-bottom:10px">Barcode: <strong>{{ printingProduct?.barcode }}</strong></div>
+      <div class="barcode-preview" style="margin:0 auto">
+        <svg #printBarcodeSvg></svg>
+      </div>
+    </div>
+    <mat-form-field appearance="outline" style="width:100%">
+      <mat-label>Number of Labels *</mat-label>
+      <input matInput type="number" [(ngModel)]="printBarcodeQty" min="1" required />
+      <mat-hint>How many barcode labels to print?</mat-hint>
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-stroked-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary" (click)="printBarcode()">
+      <mat-icon>print</mat-icon> Print
     </button>
   </mat-dialog-actions>
 </ng-template>
