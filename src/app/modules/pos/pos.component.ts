@@ -75,7 +75,7 @@ export class PosComponent implements OnInit {
 
     // Product autocomplete — also auto-detects barcode scanner input
     this.searchCtrl.valueChanges.pipe(
-      debounceTime(150),
+      debounceTime(150), distinctUntilChanged(),
       switchMap(v => {
         const q = String(v || '').trim();
         if (q.length < 2) { this.suggestions = []; return of(null); }
@@ -84,8 +84,12 @@ export class PosComponent implements OnInit {
         // Barcode scanners type very fast — the debounced value will be the
         // complete barcode. Auto-add to cart without requiring Enter.
         if (/^\d{8,}$/.test(q)) {
+          // Clear input immediately (emitEvent: true so stream resets for next scan)
+          // and close autocomplete panel so scanner's Enter key doesn't double-add
+          this.searchCtrl.setValue('', { emitEvent: true });
+          this.suggestions = [];
           this.scan(q);
-          return of(null); // don't show autocomplete for barcodes
+          return of(null);
         }
 
         this.searching = true;

@@ -44,10 +44,10 @@ export class ProductsComponent implements OnInit, OnDestroy {
       gstRate: [0, [Validators.min(0), Validators.max(100)]],
       stockQty: [0, Validators.min(0)],
       reorderLevel: [10, Validators.min(0)],
-      expiryDate: [''],
+      expiryDate: [null],
       supplierId: [null],
       isActive: [true],
-      shelf: ['', Validators.required],
+      shelf: [''],
       productDiscount: [0, [Validators.min(0), Validators.max(100)]],
       unitsPerStrip:   [1, [Validators.min(1)]],
       stripsPerBox:    [1, [Validators.min(1)]],
@@ -165,9 +165,26 @@ export class ProductsComponent implements OnInit, OnDestroy {
   openModal(row?: any) {
     this.editing = row ?? null;
     if (row) {
-      this.form.patchValue({ ...row, isActive: row.isActive === 1 || row.isActive === true, supplierId: row.supplierId ?? null, expiryDate: row.expiryDate || '', shelf: row.shelf || '', productDiscount: row.productDiscount || 0, unitsPerStrip: row.unitsPerStrip || 1, stripsPerBox: row.stripsPerBox || 1, packagingUnit: row.packagingUnit || 'unit' });
+      // Convert expiryDate string to Date object for matDatepicker, or null if empty
+      const expiryVal = row.expiryDate ? new Date(row.expiryDate) : null;
+      this.form.patchValue({
+        ...row,
+        isActive: row.isActive === 1 || row.isActive === true,
+        supplierId: row.supplierId ?? null,
+        expiryDate: expiryVal,
+        shelf: row.shelf || '',
+        productDiscount: row.productDiscount || 0,
+        unitsPerStrip: row.unitsPerStrip || 1,
+        stripsPerBox: row.stripsPerBox || 1,
+        packagingUnit: row.packagingUnit || 'unit',
+      });
     } else {
-      this.form.reset({ name: '', sku: '', barcode: '', category: 'Tablet', batchNo: '', unit: 'pcs', price: 0, cost: 0, gstRate: 0, stockQty: 0, reorderLevel: 10, expiryDate: '', supplierId: null, isActive: true, productDiscount: 0, unitsPerStrip: 1, stripsPerBox: 1, packagingUnit: 'unit' });
+      this.form.reset({
+        name: '', sku: '', barcode: '', category: 'Tablet', batchNo: '', unit: 'pcs',
+        price: 0, cost: 0, gstRate: 0, stockQty: 0, reorderLevel: 10,
+        expiryDate: null, supplierId: null, isActive: true, shelf: '',
+        productDiscount: 0, unitsPerStrip: 1, stripsPerBox: 1, packagingUnit: 'unit',
+      });
     }
     this.dialog.open(this.productDialog, { width: '720px', maxWidth: '98vw' });
   }
@@ -183,9 +200,14 @@ export class ProductsComponent implements OnInit, OnDestroy {
       this.toast.warning('Please fill all required fields correctly');
       return;
     }
+    // Convert Date to ISO string for the backend
+    const payload = { ...this.form.value };
+    if (payload.expiryDate instanceof Date) {
+      payload.expiryDate = payload.expiryDate.toISOString().split('T')[0];
+    }
     const req = this.editing
-      ? this.api.put<any>(`/products/${this.editing.id}`, this.form.value)
-      : this.api.post<any>('/products', this.form.value);
+      ? this.api.put<any>(`/products/${this.editing.id}`, payload)
+      : this.api.post<any>('/products', payload);
     req.subscribe({
       next: () => {
         this.toast.success(this.editing ? 'Product updated successfully' : 'Product added successfully');
