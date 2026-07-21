@@ -173,8 +173,20 @@
   <mat-dialog-content>
     <form [formGroup]="form" class="modal-form">
 
-      <!-- Row 1: 3 columns -->
-      <div class="form-row mt-3">
+      <!-- Row 1: Barcode input + Barcode SVG preview -->
+      <div class="form-row barcode-row">
+        <mat-form-field appearance="outline" class="form-field barcode-input-field">
+          <mat-label>Barcode *</mat-label>
+          <input #barcodeInput matInput formControlName="barcode" autofocus />
+        </mat-form-field>
+
+        <div class="barcode-preview">
+          <svg #barcodeSvg></svg>
+        </div>
+      </div>
+
+      <!-- Row 2: Medicine Name + Category -->
+      <div class="form-row">
         <mat-form-field appearance="outline" class="form-field">
           <mat-label>Medicine Name *</mat-label>
           <input matInput formControlName="name" required />
@@ -188,8 +200,28 @@
         </mat-form-field>
       </div>
 
+      <!-- Row 3: Cost + Price + Expiry Date -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Cost (Rs. )</mat-label>
+          <input matInput type="number" formControlName="cost" min="0" required/>
+        </mat-form-field>
 
-      <!-- Row 2: 2 columns -->
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Price (Rs. ) *</mat-label>
+          <input matInput type="number" formControlName="price" min="0" required/>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Expiry Date</mat-label>
+          <input matInput [matDatepicker]="fromPicker" formControlName="expiryDate">
+          <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+          <mat-datepicker #fromPicker></mat-datepicker>
+          <mat-icon matPrefix>calendar_today</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <!-- Row 4: Quantity + Min Stock Level -->
       <div class="form-row">
         <mat-form-field appearance="outline" class="form-field">
           <mat-label>Quantity *</mat-label>
@@ -202,25 +234,7 @@
         </mat-form-field>
       </div>
 
-      <!-- Row 3: 3 columns -->
-      <div class="form-row">
-        <mat-form-field appearance="outline" class="form-field">
-          <mat-label>Price (Rs. ) *</mat-label>
-          <input matInput type="number" formControlName="price" min="0" required/>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="form-field">
-          <mat-label>Cost (Rs. )</mat-label>
-          <input matInput type="number" formControlName="cost" min="0" required/>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="form-field">
-          <mat-label>GST %</mat-label>
-          <input matInput type="number" formControlName="gstRate" min="0" max="100" />
-        </mat-form-field>
-      </div>
-
-      <!-- Row 4: 2 columns -->
+      <!-- Row 5: Supplier + Shelf -->
       <div class="form-row">
         <mat-form-field appearance="outline" class="form-field">
           <mat-label>Supplier</mat-label>
@@ -236,24 +250,10 @@
             <mat-option *ngFor="let s of shelves" [value]="s">{{ s }}</mat-option>
           </mat-select>
         </mat-form-field>
-
-        <mat-form-field appearance="outline" class="form-field">
-          <mat-label>Expiry Date</mat-label>
-          <input matInput [matDatepicker]="fromPicker" formControlName="expiryDate">
-          <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
-          <mat-datepicker #fromPicker></mat-datepicker>
-          <mat-icon matPrefix>calendar_today</mat-icon>
-        </mat-form-field>
       </div>
 
-
-      <!-- Row 6: 2 columns -->
+      <!-- Row 6: Batch No + SKU + Product Discount + Packaging -->
       <div class="form-row">
-        <mat-form-field appearance="outline" class="form-field">
-          <mat-label>Barcode</mat-label>
-          <input matInput formControlName="barcode" />
-        </mat-form-field>
-
         <mat-form-field appearance="outline" class="form-field">
           <mat-label>Batch Number</mat-label>
           <input matInput formControlName="batchNo" />
@@ -264,14 +264,13 @@
           <input matInput formControlName="sku" />
         </mat-form-field>
 
-        <!-- ─── New fields: Product Discount & Packaging ─── -->
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="form-field">
           <mat-label>Product Discount %</mat-label>
           <input matInput type="number" formControlName="productDiscount" min="0" max="100" />
           <mat-hint>Default % discount applied at billing</mat-hint>
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="form-field">
           <mat-label>Packaging Unit</mat-label>
           <mat-select formControlName="packagingUnit">
             <mat-option value="unit">Unit / Piece</mat-option>
@@ -280,13 +279,13 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="form-field">
           <mat-label>Units per Strip</mat-label>
           <input matInput type="number" formControlName="unitsPerStrip" min="1" />
           <mat-hint>e.g. 10 tablets per strip</mat-hint>
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="form-field">
           <mat-label>Strips per Box</mat-label>
           <input matInput type="number" formControlName="stripsPerBox" min="1" />
           <mat-hint>e.g. 4 strips per box</mat-hint>

@@ -214,3 +214,34 @@ th {
   content: " *";
   color: red;
 }
+
+/* ── Barcode Row ── */
+.barcode-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.barcode-input-field {
+  flex: 1 1 250px;
+  min-width: 200px;
+}
+
+.barcode-preview {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+  padding: 4px 12px;
+  min-height: 56px;
+  min-width: 200px;
+  background: #fafafa;
+}
+
+.barcode-preview svg {
+  max-width: 100%;
+  height: auto;
+}

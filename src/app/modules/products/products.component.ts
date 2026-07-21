@@ -1,15 +1,17 @@
-import { Component, OnInit, ViewChild, TemplateRef, OnDestroy } from '@angular/core';
+import { Component, OnInit, ViewChild, TemplateRef, OnDestroy, ElementRef, AfterViewInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
+import JsBarcode from 'jsbarcode';
 
 @Component({ templateUrl: './products.component.html', styleUrls: ['./products.component.scss'] })
-export class ProductsComponent implements OnInit, OnDestroy {
+export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('productDialog') productDialog!: TemplateRef<any>;
   @ViewChild('qtyDialog') qtyDialog!: TemplateRef<any>;
+  @ViewChild('barcodeSvg') barcodeSvg!: ElementRef<SVGSVGElement>;
 
   categories = ['Tablet', 'Capsule', 'Injection', 'Syrup', 'Cream', 'Drops', 'Ointment', 'Powder', 'Strip', 'Other'];
   categoryFilter = '';
@@ -41,7 +43,6 @@ export class ProductsComponent implements OnInit, OnDestroy {
       unit: ['pcs'],
       price: [0, [Validators.required, Validators.min(0)]],
       cost: [0, Validators.min(0)],
-      gstRate: [0, [Validators.min(0), Validators.max(100)]],
       stockQty: [0, Validators.min(0)],
       reorderLevel: [10, Validators.min(0)],
       expiryDate: [null],
@@ -69,6 +70,15 @@ export class ProductsComponent implements OnInit, OnDestroy {
     });
 
     this.api.get<any>('/suppliers').subscribe(r => this.suppliers = r.data || []);
+  }
+
+  ngAfterViewInit() {
+    // Subscribe to barcode value changes to re-render the barcode image
+    this.form.get('barcode').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((value: string) => {
+        this.renderBarcode(value);
+      });
   }
 
   ngOnDestroy() {
@@ -162,6 +172,54 @@ export class ProductsComponent implements OnInit, OnDestroy {
     return 'In Stock';
   }
 
+  /**
+   * Generates a valid 13-digit EAN-13 barcode.
+   * First 12 digits are random, 13th is the check digit.
+   */
+  generateEAN13Barcode(): string {
+    // Generate 12 random digits
+    let digits = '';
+    for (let i = 0; i < 12; i++) {
+      digits += Math.floor(Math.random() * 10).toString();
+    }
+
+    // Calculate EAN-13 check digit
+    let sum = 0;
+    for (let i = 0; i < 12; i++) {
+      const digit = parseInt(digits[i], 10);
+      // Odd positions (1-indexed) have weight 1, even positions have weight 3
+      sum += (i % 2 === 0) ? digit : digit * 3;
+    }
+    const checkDigit = (10 - (sum % 10)) % 10;
+
+    return digits + checkDigit.toString();
+  }
+
+  /**
+   * Renders the barcode using JsBarcode.
+   * Uses EAN13 format for 12+ digit codes, CODE128 for shorter codes.
+   */
+  renderBarcode(value: string) {
+    if (!value || !this.barcodeSvg) {
+      return;
+    }
+
+    try {
+      const format = value.length >= 12 ? 'EAN13' : 'CODE128';
+      JsBarcode(this.barcodeSvg.nativeElement, value, {
+        format: format,
+        width: 2,
+        height: 38,
+        displayValue: true,
+        fontSize: 12,
+        margin: 3,
+        background: '#ffffff',
+      });
+    } catch (e) {
+      // Silently fail if barcode can't be rendered (e.g. invalid characters)
+    }
+  }
+
   openModal(row?: any) {
     this.editing = row ?? null;
     if (row) {
@@ -179,14 +237,22 @@ export class ProductsComponent implements OnInit, OnDestroy {
         packagingUnit: row.packagingUnit || 'unit',
       });
     } else {
+      // Generate a new barcode for new products
+      const newBarcode = this.generateEAN13Barcode();
       this.form.reset({
-        name: '', sku: '', barcode: '', category: 'Tablet', batchNo: '', unit: 'pcs',
-        price: 0, cost: 0, gstRate: 0, stockQty: 0, reorderLevel: 10,
+        name: '', sku: '', barcode: newBarcode, category: 'Tablet', batchNo: '', unit: 'pcs',
+        price: 0, cost: 0, stockQty: 0, reorderLevel: 10,
         expiryDate: null, supplierId: null, isActive: true, shelf: '',
         productDiscount: 0, unitsPerStrip: 1, stripsPerBox: 1, packagingUnit: 'unit',
       });
     }
-    this.dialog.open(this.productDialog, { width: '720px', maxWidth: '98vw' });
+    const dialogRef = this.dialog.open(this.productDialog, { width: '720px', maxWidth: '98vw' });
+    // Render barcode after dialog opens and SVG element exists in DOM
+    dialogRef.afterOpened().subscribe(() => {
+      setTimeout(() => {
+        this.renderBarcode(this.form.get('barcode').value);
+      });
+    });
   }
 
   openQtyModal(row: any) {
