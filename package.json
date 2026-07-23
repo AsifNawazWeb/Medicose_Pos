@@ -46,6 +46,7 @@
     "helmet": "^7.1.0",
     "jsbarcode": "^3.12.3",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.2.0",
     "nanoid": "^3.3.4",
     "ng2-charts": "^5.0.4",
     "node-cron": "^3.0.3",

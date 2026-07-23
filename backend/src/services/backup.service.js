@@ -15,4 +15,25 @@ function copyDb(dbPath, backupDir) {
   return dest;
 }
 
-module.exports = { copyDb };
+function restoreDb(sourceFile, dbPath) {
+  // Verify source exists and is a valid file
+  if (!fs.existsSync(sourceFile)) {
+    throw new Error('Backup file not found');
+  }
+  const stat = fs.statSync(sourceFile);
+  if (!stat.isFile() || stat.size === 0) {
+    throw new Error('Invalid backup file');
+  }
+  // Ensure target directory exists
+  ensureDir(path.dirname(dbPath));
+  // Keep a safety backup of current DB before overwriting
+  const safetyBackup = dbPath + '.before_restore_' + Date.now() + '.bak';
+  if (fs.existsSync(dbPath)) {
+    fs.copyFileSync(dbPath, safetyBackup);
+  }
+  // Overwrite current DB with backup
+  fs.copyFileSync(sourceFile, dbPath);
+  return { restored: true, safetyBackup };
+}
+
+module.exports = { copyDb, restoreDb };

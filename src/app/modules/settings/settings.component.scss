@@ -3,6 +3,28 @@
 .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .full{ width: 100%; }
 .actions{ margin-top: 10px; }
+
+.backup-desc {
+  margin-bottom: 16px;
+  color: #666;
+  line-height: 1.5;
+  strong {
+    color: #d32f2f;
+  }
+}
+
+.backup-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.backup-divider {
+  color: #999;
+  font-style: italic;
+}
+
 @media (max-width: 900px){
   .grid2{ grid-template-columns: 1fr; }
 }

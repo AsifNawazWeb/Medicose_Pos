@@ -9,19 +9,21 @@ function summary({ from, to }) {
     params.push(from, to);
   }
   const sales = db.prepare(`SELECT COUNT(*) AS count, COALESCE(SUM(grandTotal),0) AS revenue FROM sales ${where}`).get(...params);
-  const lowStock = db.prepare(`SELECT COUNT(*) AS count FROM products WHERE isActive=1 AND stockQty <= reorderLevel`).get();
-  const expiring = db.prepare(`SELECT COUNT(*) AS count FROM products WHERE isActive=1 AND expiryDate IS NOT NULL AND date(expiryDate) <= date('now','+30 day')`).get();
+  const lowStock = db.prepare(`SELECT COUNT(*) AS count FROM products WHERE isActive=1 AND stockQty > 0 AND stockQty <= reorderLevel`).get();
+  const expiring = db.prepare(`SELECT COUNT(*) AS count FROM products WHERE isActive=1 AND expiryDate IS NOT NULL AND date(expiryDate) <= date('now','+180 day')`).get();
   const outOfStock = db.prepare(`
   SELECT COUNT(*) AS count
   FROM products
   WHERE isActive = 1 AND stockQty = 0
 `).get();
-  const activeProducts = db.prepare(`
-  SELECT COUNT(*) AS count
-  FROM products
-  WHERE isActive = 1
-`).get();
-  return { sales, lowStock, expiring, outOfStock, activeProducts };
+  const profit = db.prepare(`
+    SELECT COALESCE(SUM(s.grandTotal - s.gstTotal), 0) - COALESCE(SUM(si.qty * p.cost), 0) AS profit
+    FROM sales s
+    JOIN sale_items si ON si.saleId = s.id
+    JOIN products p ON p.id = si.productId
+    ${where}
+  `).get(...params);
+  return { sales, lowStock, expiring, outOfStock, profit };
 }
 
 function topProducts({ limit = 10 }) {

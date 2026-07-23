@@ -10,6 +10,18 @@
   margin-bottom: 24px;
 }
 
+.stats-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+
+  > .stat-card {
+    flex: 1;
+    min-width: 180px;
+  }
+}
+
 .stat-card {
   display: flex;
   align-items: center;
@@ -83,6 +95,7 @@
 .stat-subtitle {
   font-size: 12px;
   color: var(--app-muted, #64748b);
+  white-space: nowrap;
 }
 
 /* Color Variants */
@@ -114,6 +127,11 @@
 .stat-expiring {
   .stat-icon { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
   &::before { background: #8b5cf6; }
+}
+
+.stat-profit {
+  .stat-icon { background: linear-gradient(135deg, #0d9488, #0f766e); }
+  &::before { background: #0d9488; }
 }
 
 /* Dashboard Content Layout */

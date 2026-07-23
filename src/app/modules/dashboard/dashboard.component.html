@@ -8,85 +8,52 @@
 
 
 <!-- Stats Cards Grid -->
-<div class="row d-flex justify-content-center align-items-center">
-  <div class="col-12 col-md-6 col-lg-2 my-3">
-    <mat-card class="stat-card stat-success" *ngIf="stats">
-      <div class="stat-icon">
-        <mat-icon>receipt_long</mat-icon>
-      </div>
-      <div class="stat-content text-center">
-        <div class="stat-value text-center py-2">{{ stats.sales.count }}</div>
-        <div class="stat-label">Total Sales</div>
-        <div class="stat-subtitle">Invoices processed</div>
-      </div>
-    </mat-card>
-  </div>
+<div class="stats-row">
+  <mat-card class="stat-card stat-primary" *ngIf="stats">
+    <div class="stat-icon">
+      <mat-icon>trending_up</mat-icon>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value text-center py-2">{{ stats.sales.revenue | number:'1.0-0' }}</div>
+      <div class="stat-label text-center">Revenue</div>
+      <div class="stat-subtitle text-center">Total earnings</div>
+    </div>
+  </mat-card>
 
-  <div class="col-12 col-md-6 col-lg-2 my-3">
-    <mat-card class="stat-card stat-primary" *ngIf="stats">
-      <div class="stat-icon text-center">
-        <mat-icon>payments</mat-icon>
-      </div>
-      <div class="stat-content">
-        <div class="stat-value text-center py-2">Rs. {{ stats.sales.revenue | number:'1.2-2' }}</div>
-        <div class="stat-label text-center ">Revenue</div>
-        <div class="stat-subtitle text-center">Total earnings</div>
-      </div>
-    </mat-card>
-  </div>
+  <mat-card class="stat-card stat-profit" *ngIf="stats">
+    <div class="stat-icon">
+      <mat-icon>savings</mat-icon>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value text-center py-2">{{ stats?.profit?.profit | number:'1.0-0' }}</div>
+      <div class="stat-label text-center">Profit</div>
+      <div class="stat-subtitle text-center">Revenue minus cost</div>
+    </div>
+  </mat-card>
 
-  <div class="col-12 col-md-6 col-lg-2 my-3">
-    <mat-card class="stat-card stat-warning" *ngIf="stats">
-      <div class="stat-icon">
-        <mat-icon>warning</mat-icon>
-      </div>
-      <div class="stat-content">
-        <div class="stat-value text-center py-2">{{ stats.lowStock.count }}</div>
-        <div class="stat-label text-center">Low Stock</div>
-        <div class="stat-subtitle">Need reordering</div>
-      </div>
-    </mat-card>
-  </div>
+  <mat-card class="stat-card stat-success" *ngIf="stats">
+    <div class="stat-icon">
+      <mat-icon>point_of_sale</mat-icon>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value text-center py-2">{{ stats.sales.count }}</div>
+      <div class="stat-label">Total Sales</div>
+      <div class="stat-subtitle">Invoices processed</div>
+    </div>
+  </mat-card>
 
-  <div class="col-12 col-md-6 col-lg-2 my-3">
-    <mat-card class="stat-card stat-expiring" *ngIf="stats">
-      <div class="stat-icon">
-        <mat-icon>schedule</mat-icon>
-      </div>
-      <div class="stat-content">
-        <div class="stat-value text-center py-2">{{ stats.expiring.count }}</div>
-        <div class="stat-label text-center">Expiring Soon</div>
-        <div class="stat-subtitle">Within 30 days</div>
-      </div>
-    </mat-card>
-  </div>
+  <mat-card class="stat-card stat-expiring" *ngIf="stats"
+    routerLink="/products" [queryParams]="{ stock: 'expiring' }">
+    <div class="stat-icon">
+      <mat-icon>hourglass_empty</mat-icon>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value text-center py-2">{{ stats.expiring.count }}</div>
+      <div class="stat-label text-center">Expiring Soon</div>
+      <div class="stat-subtitle">Within 6 months</div>
+    </div>
+  </mat-card>
 
-  <div class="col-12 col-md-6 col-lg-2 my-3">
-    <mat-card class="stat-card stat-danger" *ngIf="stats">
-      <div class="stat-icon">
-        <mat-icon>inventory</mat-icon>
-      </div>
-      <div class="stat-content">
-        <div class="stat-value text-center py-2">{{ stats?.outOfStock?.count ? stats.outOfStock.count : 0}}</div>
-        <div class="stat-label text-center">Out of Stock</div>
-        <div class="stat-subtitle">Immediate attention</div>
-      </div>
-    </mat-card>
-  </div>
-
-  <div class="col-12 col-md-6 col-lg-2 my-3">
-    <mat-card class="stat-card stat-info" *ngIf="stats">
-      <div class="stat-icon">
-        <mat-icon>inventory_2</mat-icon>
-      </div>
-      <div class="stat-content">
-        <div class="stat-value text-center py-2">{{ stats?.activeProducts?.count ? stats.activeProducts.count : 0}}
-        </div>
-        <div class="stat-label text-center">Active Products</div>
-        <div class="stat-subtitle text-center">In inventory</div>
-      </div>
-    </mat-card>
-  </div>
 </div>
 
 

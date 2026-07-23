@@ -44,3 +44,27 @@
     </form>
   </mat-card-content>
 </mat-card>
+
+<mat-card class="surface panel">
+  <mat-card-title>Database Backup & Restore</mat-card-title>
+  <mat-card-content>
+    <p class="backup-desc">
+      Download a backup of your database to save locally, or restore from a previously saved backup file.
+      <strong>Restoring will replace all current data.</strong>
+    </p>
+    <div class="backup-actions">
+      <button mat-raised-button color="primary" (click)="backupDatabase()" [disabled]="backupLoading">
+        <mat-icon>{{ backupLoading ? 'hourglass_empty' : 'cloud_download' }}</mat-icon>
+        {{ backupLoading ? 'Creating Backup...' : 'Backup Database' }}
+      </button>
+
+      <span class="backup-divider">or</span>
+
+      <button mat-stroked-button color="warn" (click)="restoreFileInput.click()" [disabled]="restoreLoading">
+        <mat-icon>{{ restoreLoading ? 'hourglass_empty' : 'cloud_upload' }}</mat-icon>
+        {{ restoreLoading ? 'Restoring...' : 'Restore Database' }}
+      </button>
+      <input type="file" #restoreFileInput hidden accept=".sqlite,.db,.bak,.sqlite3" (change)="onRestoreFileSelected($event)" />
+    </div>
+  </mat-card-content>
+</mat-card>

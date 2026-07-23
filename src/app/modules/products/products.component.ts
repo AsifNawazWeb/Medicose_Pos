@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild, TemplateRef, OnDestroy, ElementRef, AfterViewInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Subject } from 'rxjs';
@@ -38,7 +39,7 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   displayedColumns = ['name', 'category', 'shelf', 'batchNo', 'stock', 'price', 'expiryDate', 'status', 'actions'];
 
-  constructor(private fb: FormBuilder, private api: ApiService, private toast: ToastService, private dialog: MatDialog) {
+  constructor(private fb: FormBuilder, private api: ApiService, private toast: ToastService, private dialog: MatDialog, private route: ActivatedRoute) {
     this.form = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
       sku: [''],
@@ -63,7 +64,14 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit() {
     this.createShelfArray()
-    this.load();
+
+    // Check for query params to auto-apply stock filter
+    this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe(params => {
+      if (params['stock']) {
+        this.stockFilter = params['stock'];
+      }
+      this.load();
+    });
 
     // Debounced search with barcode detection
     this.searchSubject.pipe(
@@ -145,12 +153,12 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   applyStockFilter() {
     const now = new Date();
-    const in30 = new Date(); in30.setDate(now.getDate() + 30);
+    const in180 = new Date(); in180.setDate(now.getDate() + 180);
     this.filteredRows = this.rows.filter(r => {
       if (!this.stockFilter) return true;
       if (this.stockFilter === 'out') return r.stockQty <= 0;
       if (this.stockFilter === 'low') return r.stockQty > 0 && r.stockQty <= r.reorderLevel;
-      if (this.stockFilter === 'expiring') { if (!r.expiryDate) return false; const e = new Date(r.expiryDate); return e >= now && e <= in30; }
+      if (this.stockFilter === 'expiring') { if (!r.expiryDate) return false; const e = new Date(r.expiryDate); return e >= now && e <= in180; }
       if (this.stockFilter === 'active') return r.stockQty > r.reorderLevel && !this.isExpiringSoon(r.expiryDate);
       return true;
     });
@@ -159,8 +167,8 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
   isExpiringSoon(date: string): boolean {
     if (!date) return false;
     const now = new Date(); const e = new Date(date);
-    const in30 = new Date(); in30.setDate(now.getDate() + 30);
-    return e >= now && e <= in30;
+    const in180 = new Date(); in180.setDate(now.getDate() + 180);
+    return e >= now && e <= in180;
   }
 
   statusClass(r: any): string {
