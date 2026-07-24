@@ -4,10 +4,10 @@ import { Injectable } from '@angular/core';
 export class ReceiptService {
 
   buildHtml(data: any): string {
-    const storeName    = esc(data.storeName    || 'Medical Store');
-    const storeAddress = esc(data.storeAddress || '');
-    const storePhone   = esc(data.storePhone   || '');
-    const footer       = esc(data.receiptFooter || 'Thank you for your purchase!');
+    const storeName    = esc(data.storeName    || 'Yashfeen Medicose Pabbi');
+    const storeAddress = esc(data.storeAddress || 'Pabbi Bazar');
+    const storePhone   = esc(data.storePhone   || '0333-1234567');
+    const footer       = esc(data.receiptFooter || 'Developed by: AsifTech');
     const invoiceNo    = esc(data.invoiceNo    || 'N/A');
     const createdAt    = formatDate(data.createdAt);
     const customerName = esc(data.customerName || '');
@@ -17,9 +17,9 @@ export class ReceiptService {
     const items        = data.items || [];
     const subTotal     = Number(data.subTotal    || 0);
     const gstTotal     = Number(data.gstTotal    || 0);
-    const discountAmt  = Number(data.discount    || 0);   // sum of product discounts
-    const extraDiscAmt = Number(data.extraDiscount|| 0);  // sum of extra discounts
-    const billDiscAmt  = Number(data.billDiscount|| 0);   // bill-level discount
+    const discountAmt  = Number(data.discount    || 0);
+    const extraDiscAmt = Number(data.extraDiscount|| 0);
+    const billDiscAmt  = Number(data.billDiscount|| 0);
     const grandTotal   = Number(data.grandTotal  || 0);
     const amountPaid   = Number(data.amountPaid  ?? grandTotal);
     const balanceDue   = Number(data.balanceDue  || 0);
@@ -31,20 +31,14 @@ export class ReceiptService {
       const name      = esc(it.productName || '');
       const rate      = Number(it.price || 0);
       const qty       = Number(it.qty || 0);
-      const unit      = esc(it.packagingUnit || 'unit');
-      const pDisc     = Number(it.productDiscount || 0);
-      const eDisc     = Number(it.extraDiscount || 0);
       const lineTotal = Number(it.lineTotal || 0);
 
       return `
         <tr>
-          <td>${name}</td>
-          <td>${fmt(rate)}</td>
+          <td class="td-name">${name}</td>
+          <td>${fmtWhole(rate)}</td>
           <td>${qty}</td>
-          <td>${unit}</td>
-          <td>${pDisc > 0 ? `${pDisc}` : '—'}</td>
-          <td>${eDisc > 0 ? `${eDisc}` : '—'}</td>
-          <td>${fmt(lineTotal)}</td>
+          <td>${fmtWhole(lineTotal)}</td>
         </tr>
       `;
     }).join('');
@@ -57,40 +51,73 @@ export class ReceiptService {
 <meta charset="utf-8">
 <title>Invoice – ${invoiceNo}</title>
 <style>
-  @page { size: 78mm auto; margin: 0; }
+  /* 64mm width ensures content fits strictly within the ~72mm physical thermal print head */
+  @page { size: 64mm auto; margin: 0; }
   @media print {
-    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    html, body { width: 78mm; margin: 0; padding: 0; }
+    * { 
+      -webkit-print-color-adjust: exact !important; 
+      print-color-adjust: exact !important; 
+      color: #000000 !important; /* Force true black for all elements */
+    }
+    html, body { width: 64mm; margin: 0; padding: 0; }
     .no-print { display: none !important; }
   }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Courier New', Courier, monospace; background: #fff; color: #000; font-size: 11px; line-height: 1.3; }
-  .receipt { width: 78mm; max-width: 78mm; margin: 0 auto; padding: 6px 4px 16px; }
-  .header { text-align: center; margin-bottom: 6px; }
-  .store-name { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-  .store-sub { font-size: 10px; color: #111; margin-top: 2px; }
-  .meta-box { display: flex; justify-content: space-between; font-size: 10px; margin: 4px 0; }
-  .meta-box .label { font-weight: 700; }
-  hr.solid  { border: none; border-top: 2px solid #000; margin: 5px 0; }
-  hr.dashed { border: none; border-top: 1px dashed #444; margin: 4px 0; }
+  
+  /* Switched to clear sans-serif with bold weight for crisp, dark thermal heating */
+  body { 
+    font-family: Arial, Helvetica, sans-serif; 
+    background: #fff; 
+    color: #000000; 
+    font-size: 10px; 
+    font-weight: 700; /* Bold overall text so print pins heat dark */
+    line-height: 1.2; 
+  }
+
+  .receipt { width: 64mm; max-width: 64mm; margin: 0 auto; padding: 2px 0 10px; }
+  .header { text-align: center; margin-bottom: 3px; }
+  .store-name { font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3px; }
+  .store-sub { font-size: 9.5px; font-weight: 700; color: #000000; margin-top: 1px; }
+  
+  .meta-box { display: flex; justify-content: space-between; font-size: 9.5px; margin: 2px 0; font-weight: 700; }
+  .meta-box .label { font-weight: 900; }
+  
+  hr.solid  { border: none; border-top: 2px solid #000000; margin: 3px 0; }
+  hr.dashed { border: none; border-top: 1px dashed #000000; margin: 3px 0; }
 
   table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  table, th, td { border: 1px solid #000; }
-  th, td { text-align: center; padding: 3px 2px; font-size: 10px; word-break: break-word; }
-  th { font-weight: 700; text-transform: uppercase; }
+  table, th, td { border: 1px solid #000000; }
+  
+  th, td { 
+    text-align: center; 
+    padding: 2px 1px; 
+    font-size: 9.5px; 
+    font-weight: 700; 
+    color: #000000; 
+    word-break: break-word; 
+  }
+  th { font-weight: 900; text-transform: uppercase; background-color: #f0f0f0; }
   .td-name { text-align: left; }
 
-  .totals-table, .totals-table td { border: 1px solid #000; text-align: center; padding: 3px 2px; font-size: 10.5px; }
-  .grand-row td, .net-row td { font-weight: 700; font-size: 12px; }
-  .balance-due td { color: #c00; font-weight: 700; }
-  .prev-balance td { font-size: 11px; }
-  .footer { margin-top: 10px; text-align: center; font-size: 10px; color: #222; border-top: 1px dashed #666; padding-top: 6px; }
-  .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 18px auto 0; width: 78mm; max-width: 95vw; }
-  .btn { padding: 9px 22px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+  /* Column widths: Name 42%, Rate 22%, Qty 16%, Net 20% */
+  table.items-table col:nth-child(1) { width: 42%; }
+  table.items-table col:nth-child(2) { width: 22%; }
+  table.items-table col:nth-child(3) { width: 16%; }
+  table.items-table col:nth-child(4) { width: 20%; }
+
+  .totals-table, .totals-table td { border: 1px solid #000000; text-align: center; padding: 2px 1px; font-size: 10px; font-weight: 700; }
+  .grand-row td, .net-row td { font-weight: 900; font-size: 11.5px; }
+  .balance-due td { color: #000000; font-weight: 900; }
+  .prev-balance td { font-size: 10px; }
+  
+  .footer { margin-top: 6px; text-align: center; font-size: 9.5px; font-weight: 700; color: #000000; border-top: 1px dashed #000000; padding-top: 4px; }
+  .actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 12px auto 0; width: 64mm; max-width: 95vw; }
+  .btn { padding: 7px 16px; border: none; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
   .btn:hover { opacity: .85; }
   .btn-print  { background: #0d9488; color: #fff; }
   .btn-close  { background: #6b7280; color: #fff; }
-  .summary-bar { display: flex; justify-content: space-between; background: #f0f0f0; border: 1px solid #ccc; padding: 4px 6px; font-size: 10px; font-weight: 700; margin-top: 4px; }
+  .summary-bar { display: flex; justify-content: space-between; background: #f0f0f0; border: 1px solid #000000; padding: 3px 4px; font-size: 9.5px; font-weight: 900; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -115,15 +142,18 @@ export class ReceiptService {
   <hr class="solid">
 
   <!-- Items Table -->
-  <table>
+  <table class="items-table">
+    <colgroup>
+      <col style="width: 42%;">
+      <col style="width: 22%;">
+      <col style="width: 16%;">
+      <col style="width: 20%;">
+    </colgroup>
     <thead>
       <tr>
         <th>Name</th>
         <th>Rate</th>
-        <th>Pcs</th>
-        <th>Unit</th>
-        <th>Disc</th>
-        <th>EDC</th>
+        <th>Qty</th>
         <th>Net</th>
       </tr>
     </thead>
@@ -133,7 +163,7 @@ export class ReceiptService {
   </table>
 
   <div class="summary-bar">
-    <span>Items ${totalItems}</span>
+    <span>Items: ${totalItems}</span>
     <span>Payment: ${payMethod}</span>
   </div>
 
@@ -143,12 +173,12 @@ export class ReceiptService {
   <table class="totals-table">
     <tr><td>Sub Total</td><td>${fmt(subTotal)}</td></tr>
     ${gstTotal > 0 ? `<tr><td>GST</td><td>${fmt(gstTotal)}</td></tr>` : ''}
-    ${discountAmt > 0 ? `<tr><td>Disc</td><td style="color:#c00">- ${fmt(discountAmt)}</td></tr>` : ''}
-    ${extraDiscAmt > 0 ? `<tr><td>EDC</td><td style="color:#c00">- ${fmt(extraDiscAmt)}</td></tr>` : ''}
-    ${billDiscAmt > 0 ? `<tr><td>BD</td><td style="color:#c00">- ${fmt(billDiscAmt)}</td></tr>` : ''}
+    ${discountAmt > 0 ? `<tr><td>Disc</td><td>- ${fmt(discountAmt)}</td></tr>` : ''}
+    ${extraDiscAmt > 0 ? `<tr><td>EDC</td><td>- ${fmt(extraDiscAmt)}</td></tr>` : ''}
+    ${billDiscAmt > 0 ? `<tr><td>Discount</td><td>- ${fmt(billDiscAmt)}</td></tr>` : ''}
     <tr class="grand-row"><td>TOTAL</td><td>${fmt(grandTotal)}</td></tr>
     ${amountPaid < grandTotal ? `<tr><td>Amount Paid</td><td>${fmt(amountPaid)}</td></tr>` : ''}
-    ${prevBalance > 0 ? `<tr><td>Prev. Balance</td><td style="color:#c00">${fmt(prevBalance)}</td></tr>` : ''}
+    ${prevBalance > 0 ? `<tr><td>Prev. Balance</td><td>${fmt(prevBalance)}</td></tr>` : ''}
     ${(balanceDue > 0 || prevBalance > 0) ? `<tr class="net-row"><td>Net Amount</td><td>${fmt(netAmount)}</td></tr>` : ''}
     ${balanceDue > 0 ? `<tr><td>⚠ Balance Due</td><td>${fmt(balanceDue)}</td></tr>` : ''}
   </table>
@@ -175,6 +205,8 @@ export class ReceiptService {
 
 // ── Helpers ───────────────────────────────────────────────
 function fmt(v: any): string { return Number(v || 0).toFixed(2); }
+
+function fmtWhole(v: any): string { return Math.round(Number(v || 0)).toString(); }
 
 function esc(s: string): string {
   return String(s || '').replace(/[&<>"']/g, (c: string) =>
