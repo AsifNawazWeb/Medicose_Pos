@@ -149,14 +149,29 @@ ipcMain.handle('print:receipt', async (_evt, html, options = {}) => {
   try { fs.writeFileSync(tmpHtml, html, 'utf-8'); }
   catch { return { success: false, failureReason: 'Failed to write temp file' }; }
 
-  await printWin.loadFile(tmpHtml);
-
   return new Promise((resolve) => {
-    printWin.webContents.print({ silent, printBackground: true }, (success, failureReason) => {
-      printWin.close();
-      // Clean up temp file
+    printWin.webContents.on('did-finish-load', () => {
+      // Wait briefly for CSS/layout calculation before sending print job to hardware printer driver
+      setTimeout(() => {
+        printWin.webContents.print(
+          {
+            silent,
+            printBackground: true,
+            margins: { marginType: 'none' },
+          },
+          (success, failureReason) => {
+            try { printWin.close(); } catch {}
+            try { fs.unlinkSync(tmpHtml); } catch {}
+            resolve({ success, failureReason: failureReason || null });
+          }
+        );
+      }, 250);
+    });
+
+    printWin.loadFile(tmpHtml).catch((err) => {
+      try { printWin.close(); } catch {}
       try { fs.unlinkSync(tmpHtml); } catch {}
-      resolve({ success, failureReason: failureReason || null });
+      resolve({ success: false, failureReason: err?.message || 'Failed to load receipt HTML' });
     });
   });
 });

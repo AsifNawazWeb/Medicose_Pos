@@ -42,8 +42,10 @@ export class PosComponent implements OnInit {
   suggestions: any[] = [];
   searching = false;
 
-  // Prevent double-add when autocomplete (optionSelected) and Enter both fire
+  // Prevent double-add when autocomplete (optionSelected), Enter, and valueChanges all fire
   private addingProduct = false;
+  private lastScannedCode = '';
+  private lastScanTime = 0;
 
   // Customer
   customerSearchCtrl = new FormControl('');
@@ -84,9 +86,8 @@ export class PosComponent implements OnInit {
         // Barcode scanners type very fast — the debounced value will be the
         // complete barcode. Auto-add to cart without requiring Enter.
         if (/^\d{8,}$/.test(q)) {
-          // Clear input immediately (emitEvent: true so stream resets for next scan)
-          // and close autocomplete panel so scanner's Enter key doesn't double-add
-          this.searchCtrl.setValue('', { emitEvent: true });
+          // Clear input immediately and close autocomplete panel so scanner's Enter key doesn't double-add
+          this.searchCtrl.setValue('', { emitEvent: false });
           this.suggestions = [];
           this.scan(q);
           return of(null);
@@ -147,17 +148,26 @@ export class PosComponent implements OnInit {
     const v = String(this.searchCtrl.value || '').trim();
     if (!v) return;
 
-    // If autocomplete has suggestions, autoActiveFirstOption will handle
-    // the Enter key via (optionSelected). Only scan directly when there
-    // are no suggestions (e.g. barcode typed faster than debounce).
-    if (this.suggestions.length > 0) return;
+    this.searchCtrl.setValue('', { emitEvent: false });
+    this.suggestions = [];
 
     this.scan(v);
   }
 
   scan(code: string) {
+    const cleanCode = String(code || '').trim();
+    if (!cleanCode) return;
+
+    // Deduplicate rapid scan triggers of the exact same barcode within 800ms
+    const now = Date.now();
+    if (this.lastScannedCode === cleanCode && (now - this.lastScanTime) < 800) {
+      return;
+    }
+    this.lastScannedCode = cleanCode;
+    this.lastScanTime = now;
+
     // Step 1: Try exact barcode match via dedicated scan endpoint
-    this.api.get<any>(`/products/scan/${encodeURIComponent(code)}`).subscribe({
+    this.api.get<any>(`/products/scan/${encodeURIComponent(cleanCode)}`).subscribe({
       next: (r) => {
         if (r?.data) {
           // Exact barcode match — add directly to cart
@@ -165,7 +175,7 @@ export class PosComponent implements OnInit {
           return;
         }
         // Step 2: Fall back to name/barcode LIKE search
-        this.api.get<any>('/products', { q: code, limit: 1 }).subscribe(r2 => {
+        this.api.get<any>('/products', { q: cleanCode, limit: 1 }).subscribe(r2 => {
           const products = r2.data || [];
           if (products.length === 0) { this.toast.error('Product not found'); return; }
           this.selectProduct(products[0]);
@@ -173,7 +183,7 @@ export class PosComponent implements OnInit {
       },
       error: () => {
         // Scan endpoint failed — fall back to generic search
-        this.api.get<any>('/products', { q: code, limit: 1 }).subscribe(r2 => {
+        this.api.get<any>('/products', { q: cleanCode, limit: 1 }).subscribe(r2 => {
           const products = r2.data || [];
           if (products.length === 0) { this.toast.error('Product not found'); return; }
           this.selectProduct(products[0]);
@@ -217,8 +227,8 @@ export class PosComponent implements OnInit {
     this.suggestions = [];
     this.toast.success('Item added to cart');
 
-    // Reset guard after a short delay (allows any pending event to resolve)
-    setTimeout(() => this.addingProduct = false, 100);
+    // Reset guard after a 400ms delay to absorb any trailing input events
+    setTimeout(() => this.addingProduct = false, 400);
   }
 
   /**

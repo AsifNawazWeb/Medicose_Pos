@@ -57,36 +57,40 @@ export class ReceiptService {
 <meta charset="utf-8">
 <title>Invoice – ${invoiceNo}</title>
 <style>
-  @page { size: 80mm auto; margin: 0; }
-  @media print { * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .no-print { display:none !important; } body { margin:0; } }
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:'Courier New', Courier, monospace; background:#fff; color:#000; font-size:11px; line-height:1.4; }
-  .receipt { width:80mm; max-width:80mm; margin:0 auto; padding:10px 10px 16px; }
-  .header { text-align:center; margin-bottom:6px; }
-  .store-name { font-size:15px; font-weight:700; text-transform:uppercase; letter-spacing:1px; }
-  .store-sub { font-size:10px; color:#333; margin-top:2px; }
-  .meta-box { display:flex; justify-content:space-between; font-size:10px; margin:5px 0; }
-  .meta-box .label { font-weight:700; }
-  hr.solid  { border:none; border-top:2px solid #000; margin:5px 0; }
-  hr.dashed { border:none; border-top:1px dashed #888; margin:4px 0; }
+  @page { size: 78mm auto; margin: 0; }
+  @media print {
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html, body { width: 78mm; margin: 0; padding: 0; }
+    .no-print { display: none !important; }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Courier New', Courier, monospace; background: #fff; color: #000; font-size: 11px; line-height: 1.3; }
+  .receipt { width: 78mm; max-width: 78mm; margin: 0 auto; padding: 6px 4px 16px; }
+  .header { text-align: center; margin-bottom: 6px; }
+  .store-name { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .store-sub { font-size: 10px; color: #111; margin-top: 2px; }
+  .meta-box { display: flex; justify-content: space-between; font-size: 10px; margin: 4px 0; }
+  .meta-box .label { font-weight: 700; }
+  hr.solid  { border: none; border-top: 2px solid #000; margin: 5px 0; }
+  hr.dashed { border: none; border-top: 1px dashed #444; margin: 4px 0; }
 
-  table { width:100%; border-collapse:collapse; }
-  table, th, td { border:1px solid #000; }
-  th, td { text-align:center; padding:3px 2px; font-size:10.5px; }
-  th { font-weight:700; text-transform:uppercase; }
-  .td-name { text-align:left; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  table, th, td { border: 1px solid #000; }
+  th, td { text-align: center; padding: 3px 2px; font-size: 10px; word-break: break-word; }
+  th { font-weight: 700; text-transform: uppercase; }
+  .td-name { text-align: left; }
 
-  .totals-table, .totals-table td { border:1px solid #000; text-align:center; padding:3px 2px; font-size:10.5px; }
-  .grand-row td, .net-row td { font-weight:700; font-size:12px; }
-  .balance-due td { color:#c00; font-weight:700; }
-  .prev-balance td { font-size:11px; }
-  .footer { margin-top:10px; text-align:center; font-size:10px; color:#444; border-top:1px dashed #999; padding-top:6px; }
-  .actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:18px auto 0; width:80mm; max-width:95vw; }
-  .btn { padding:9px 22px; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; transition:opacity .15s; }
-  .btn:hover { opacity:.85; }
-  .btn-print  { background:#0d9488; color:#fff; }
-  .btn-close  { background:#6b7280; color:#fff; }
-  .summary-bar { display:flex; justify-content:space-between; background:#f0f0f0; border:1px solid #ccc; padding:4px 6px; font-size:10px; font-weight:700; margin-top:4px; }
+  .totals-table, .totals-table td { border: 1px solid #000; text-align: center; padding: 3px 2px; font-size: 10.5px; }
+  .grand-row td, .net-row td { font-weight: 700; font-size: 12px; }
+  .balance-due td { color: #c00; font-weight: 700; }
+  .prev-balance td { font-size: 11px; }
+  .footer { margin-top: 10px; text-align: center; font-size: 10px; color: #222; border-top: 1px dashed #666; padding-top: 6px; }
+  .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 18px auto 0; width: 78mm; max-width: 95vw; }
+  .btn { padding: 9px 22px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-print  { background: #0d9488; color: #fff; }
+  .btn-close  { background: #6b7280; color: #fff; }
+  .summary-bar { display: flex; justify-content: space-between; background: #f0f0f0; border: 1px solid #ccc; padding: 4px 6px; font-size: 10px; font-weight: 700; margin-top: 4px; }
 </style>
 </head>
 <body>
