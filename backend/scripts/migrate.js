@@ -46,9 +46,22 @@ function run() {
   addCol('sales', 'prevBalance',   'REAL NOT NULL DEFAULT 0');   // customer balance BEFORE this sale
 
   // ── sale_items ─────────────────────────────────────────────────────────────
+  addCol('sale_items', 'costPrice',       'REAL NOT NULL DEFAULT 0'); // snapshot of product cost at checkout
   addCol('sale_items', 'productDiscount', 'REAL NOT NULL DEFAULT 0'); // % discount applied on this line
   addCol('sale_items', 'discountAmount',  'REAL NOT NULL DEFAULT 0'); // absolute discount on this line
   addCol('sale_items', 'packagingUnit',   "TEXT NOT NULL DEFAULT 'unit'"); // unit|strip|box
+
+  // Backfill costPrice for existing sale_items using current products.cost if costPrice is 0
+  db.exec(`
+    UPDATE sale_items
+    SET costPrice = (
+      SELECT COALESCE(p.cost, 0)
+      FROM products p
+      WHERE p.id = sale_items.productId
+    )
+    WHERE costPrice IS NULL OR costPrice = 0;
+  `);
+  console.log('  ✓ sale_items costPrice backfilled');
 
   // ── customer_ledger (new table) ────────────────────────────────────────────
   db.exec(`

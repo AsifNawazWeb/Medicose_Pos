@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS sale_items (
   productId INTEGER NOT NULL,
   qty INTEGER NOT NULL,
   price REAL NOT NULL,
+  costPrice REAL NOT NULL DEFAULT 0,            -- Snapshot of product cost price at checkout
   -- Extended discount columns (added in v2)
   productDiscount REAL NOT NULL DEFAULT 0,       -- % discount applied first on base price
   discountAmount REAL NOT NULL DEFAULT 0,        -- absolute Rs amount of productDiscount

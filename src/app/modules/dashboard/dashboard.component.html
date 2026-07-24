@@ -14,9 +14,9 @@
       <mat-icon>trending_up</mat-icon>
     </div>
     <div class="stat-content">
-      <div class="stat-value text-center py-2">{{ stats.sales.revenue | number:'1.0-0' }}</div>
-      <div class="stat-label text-center">Revenue</div>
-      <div class="stat-subtitle text-center">Total earnings</div>
+      <div class="stat-value text-center py-2">Rs. {{ (stats?.sales?.revenue || 0) | number:'1.2-2' }}</div>
+      <div class="stat-label text-center">Today's Revenue</div>
+      <div class="stat-subtitle text-center">Resets Daily</div>
     </div>
   </mat-card>
 
@@ -25,9 +25,9 @@
       <mat-icon>savings</mat-icon>
     </div>
     <div class="stat-content">
-      <div class="stat-value text-center py-2">{{ stats?.profit?.profit | number:'1.0-0' }}</div>
-      <div class="stat-label text-center">Profit</div>
-      <div class="stat-subtitle text-center">Revenue minus cost</div>
+      <div class="stat-value text-center py-2">Rs. {{ (stats?.profit?.profit || 0) | number:'1.2-2' }}</div>
+      <div class="stat-label text-center">Today's Profit</div>
+      <div class="stat-subtitle text-center">Resets Daily</div>
     </div>
   </mat-card>
 
@@ -36,9 +36,9 @@
       <mat-icon>point_of_sale</mat-icon>
     </div>
     <div class="stat-content">
-      <div class="stat-value text-center py-2">{{ stats.sales.count }}</div>
-      <div class="stat-label">Total Sales</div>
-      <div class="stat-subtitle">Invoices processed</div>
+      <div class="stat-value text-center py-2">{{ stats?.sales?.count || 0 }}</div>
+      <div class="stat-label text-center">Today's Total Sales</div>
+      <div class="stat-subtitle text-center">Resets Daily</div>
     </div>
   </mat-card>
 
@@ -48,9 +48,9 @@
       <mat-icon>hourglass_empty</mat-icon>
     </div>
     <div class="stat-content">
-      <div class="stat-value text-center py-2">{{ stats.expiring.count }}</div>
+      <div class="stat-value text-center py-2">{{ stats?.expiring?.count || 0 }}</div>
       <div class="stat-label text-center">Expiring Soon</div>
-      <div class="stat-subtitle">Within 6 months</div>
+      <div class="stat-subtitle text-center">Within 180 days</div>
     </div>
   </mat-card>
 

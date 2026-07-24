@@ -27,10 +27,11 @@ function getSchemaInfo(db) {
     "SELECT name FROM sqlite_master WHERE type='table' AND name='customer_ledger'"
   ).get();
   return {
-    hasNewSaleCols:  saleCols.includes('amountPaid'),
-    hasExtItemCols:  siCols.includes('productDiscount'),    // extended item cols (productDiscount etc.)
+    hasNewSaleCols:   saleCols.includes('amountPaid'),
+    hasCostPrice:     siCols.includes('costPrice'),         // snapshot cost price column
+    hasExtItemCols:   siCols.includes('productDiscount'),    // extended item cols (productDiscount etc.)
     hasExtraDiscCols: siCols.includes('extraDiscount'),     // new: extraDiscount column
-    hasBalance:      custCols.includes('balance'),
+    hasBalance:       custCols.includes('balance'),
     hasLedger,
   };
 }
@@ -118,7 +119,7 @@ function create({
   }
 
   // ── 3. Detect schema  (OUTSIDE transaction) ────────────────────────────
-  const { hasNewSaleCols, hasExtItemCols, hasExtraDiscCols, hasBalance, hasLedger } = getSchemaInfo(db);
+  const { hasNewSaleCols, hasCostPrice, hasExtItemCols, hasExtraDiscCols, hasBalance, hasLedger } = getSchemaInfo(db);
 
   // ── 4. Pre-fetch prevBalance for existing customer  (OUTSIDE tx) ────────
   let prevBalance = 0;
@@ -153,27 +154,31 @@ function create({
         VALUES (?,?,?,?,?,?,?,?,'COMPLETED',?,?,?)
       `);
 
-  // Sale item INSERT — 3 variants for backward compatibility:
-  //   hasExtraDiscCols → 11 cols (includes extraDiscount + extraDiscountAmount)
-  //   hasExtItemCols   → 10 cols (productDiscount but no extraDiscount)
-  //   base             →  7 cols (old schema)
-  const insertItemStmt = hasExtraDiscCols
+  // Sale item INSERT variants
+  const insertItemStmt = (hasCostPrice && hasExtraDiscCols)
     ? db.prepare(`
         INSERT INTO sale_items
-          (saleId,productId,qty,price,productDiscount,discountAmount,
+          (saleId,productId,qty,price,costPrice,productDiscount,discountAmount,
            extraDiscount,extraDiscountAmount,gstRate,gstAmount,lineTotal,packagingUnit)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
       `)
-    : hasExtItemCols
+    : hasExtraDiscCols
       ? db.prepare(`
           INSERT INTO sale_items
-            (saleId,productId,qty,price,productDiscount,discountAmount,gstRate,gstAmount,lineTotal,packagingUnit)
-          VALUES (?,?,?,?,?,?,?,?,?,?)
+            (saleId,productId,qty,price,productDiscount,discountAmount,
+             extraDiscount,extraDiscountAmount,gstRate,gstAmount,lineTotal,packagingUnit)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
         `)
-      : db.prepare(`
-          INSERT INTO sale_items (saleId,productId,qty,price,gstRate,gstAmount,lineTotal)
-          VALUES (?,?,?,?,?,?,?)
-        `);
+      : hasExtItemCols
+        ? db.prepare(`
+            INSERT INTO sale_items
+              (saleId,productId,qty,price,productDiscount,discountAmount,gstRate,gstAmount,lineTotal,packagingUnit)
+            VALUES (?,?,?,?,?,?,?,?,?,?)
+          `)
+        : db.prepare(`
+            INSERT INTO sale_items (saleId,productId,qty,price,gstRate,gstAmount,lineTotal)
+            VALUES (?,?,?,?,?,?,?)
+          `);
 
   const updateStockStmt   = db.prepare('UPDATE products SET stockQty = stockQty - ?, updatedAt = ? WHERE id = ?');
   const updateCustBalance = hasBalance
@@ -225,8 +230,9 @@ function create({
       if (qty <= 0) throw new Error('Invalid quantity');
       if (p.stockQty < qty) throw new Error(`Insufficient stock for ${p.name}`);
 
-      const price    = Number(it.price    ?? p.price);
-      const pDisc    = Math.max(0, Math.min(100, Number(it.productDiscount ?? p.productDiscount ?? 0)));
+      const price     = Number(it.price    ?? p.price);
+      const costPrice = Number(it.costPrice ?? p.cost ?? 0);
+      const pDisc     = Math.max(0, Math.min(100, Number(it.productDiscount ?? p.productDiscount ?? 0)));
       // extraDiscount: clamp 0–100, default 0 for backward compat
       const eDisc    = Math.max(0, Math.min(100, Number(it.extraDiscount ?? 0)));
       const gstRate  = Number(it.gstRate  ?? p.gstRate ?? 0);
@@ -248,7 +254,7 @@ function create({
       totalExtraDiscAmt += extraDiscAmt;
       gstTotal          += gstAmt;
 
-      return { productId: p.id, qty, price, pDisc, discAmt, eDisc, extraDiscAmt, gstRate, gstAmt, lineTotal, packUnit };
+      return { productId: p.id, qty, price, costPrice, pDisc, discAmt, eDisc, extraDiscAmt, gstRate, gstAmt, lineTotal, packUnit };
     });
 
     const totalItemDiscAmt = totalProdDiscAmt + totalExtraDiscAmt;
@@ -278,14 +284,14 @@ function create({
 
     // Insert items + update stock
     for (const it of processed) {
-      if (hasExtraDiscCols) {
-        // Full schema: include both productDiscount and extraDiscount
+      if (hasCostPrice && hasExtraDiscCols) {
+        // Full schema with costPrice snapshot
+        insertItemStmt.run(saleId, it.productId, it.qty, it.price, it.costPrice, it.pDisc, it.discAmt, it.eDisc, it.extraDiscAmt, it.gstRate, it.gstAmt, it.lineTotal, it.packUnit);
+      } else if (hasExtraDiscCols) {
         insertItemStmt.run(saleId, it.productId, it.qty, it.price, it.pDisc, it.discAmt, it.eDisc, it.extraDiscAmt, it.gstRate, it.gstAmt, it.lineTotal, it.packUnit);
       } else if (hasExtItemCols) {
-        // Partial schema: productDiscount only (no extraDiscount column yet)
         insertItemStmt.run(saleId, it.productId, it.qty, it.price, it.pDisc, it.discAmt, it.gstRate, it.gstAmt, it.lineTotal, it.packUnit);
       } else {
-        // Legacy schema
         insertItemStmt.run(saleId, it.productId, it.qty, it.price, it.gstRate, it.gstAmt, it.lineTotal);
       }
       updateStockStmt.run(it.qty, now, it.productId);
@@ -316,19 +322,26 @@ function create({
 // ─────────────────────────────────────────────────────────────────────────────
 function edit(saleId, { items = [], billDiscount = 0, amountPaid = null }) {
   const db = getDb();
-  const { hasNewSaleCols, hasExtItemCols, hasExtraDiscCols, hasBalance, hasLedger } = getSchemaInfo(db);
+  const { hasNewSaleCols, hasCostPrice, hasExtItemCols, hasExtraDiscCols, hasBalance, hasLedger } = getSchemaInfo(db);
 
   // Prepare item INSERT matching current schema
-  const insertItemStmt = hasExtraDiscCols
+  const insertItemStmt = (hasCostPrice && hasExtraDiscCols)
     ? db.prepare(`
         INSERT INTO sale_items
-          (saleId,productId,qty,price,productDiscount,discountAmount,
+          (saleId,productId,qty,price,costPrice,productDiscount,discountAmount,
            extraDiscount,extraDiscountAmount,gstRate,gstAmount,lineTotal,packagingUnit)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
       `)
-    : hasExtItemCols
-      ? db.prepare('INSERT INTO sale_items (saleId,productId,qty,price,productDiscount,discountAmount,gstRate,gstAmount,lineTotal,packagingUnit) VALUES (?,?,?,?,?,?,?,?,?,?)')
-      : db.prepare('INSERT INTO sale_items (saleId,productId,qty,price,gstRate,gstAmount,lineTotal) VALUES (?,?,?,?,?,?,?)');
+    : hasExtraDiscCols
+      ? db.prepare(`
+          INSERT INTO sale_items
+            (saleId,productId,qty,price,productDiscount,discountAmount,
+             extraDiscount,extraDiscountAmount,gstRate,gstAmount,lineTotal,packagingUnit)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+        `)
+      : hasExtItemCols
+        ? db.prepare('INSERT INTO sale_items (saleId,productId,qty,price,productDiscount,discountAmount,gstRate,gstAmount,lineTotal,packagingUnit) VALUES (?,?,?,?,?,?,?,?,?,?)')
+        : db.prepare('INSERT INTO sale_items (saleId,productId,qty,price,gstRate,gstAmount,lineTotal) VALUES (?,?,?,?,?,?,?)');
 
   return db.transaction(() => {
     const now  = new Date().toISOString();
@@ -346,12 +359,13 @@ function edit(saleId, { items = [], billDiscount = 0, amountPaid = null }) {
     const processed = items.map(it => {
       const p = db.prepare('SELECT * FROM products WHERE id = ?').get(toIdOrNull(it.productId));
       if (!p) throw new Error('Invalid product');
-      const qty      = Math.max(0, Number(it.qty || 0));
-      const price    = Number(it.price    ?? p.price);
-      const pDisc    = Math.max(0, Math.min(100, Number(it.productDiscount ?? 0)));
-      const eDisc    = Math.max(0, Math.min(100, Number(it.extraDiscount   ?? 0)));
-      const gstRate  = Number(it.gstRate  ?? p.gstRate ?? 0);
-      const packUnit = it.packagingUnit || 'unit';
+      const qty       = Math.max(0, Number(it.qty || 0));
+      const price     = Number(it.price     ?? p.price);
+      const costPrice = Number(it.costPrice ?? p.cost ?? 0);
+      const pDisc     = Math.max(0, Math.min(100, Number(it.productDiscount ?? 0)));
+      const eDisc     = Math.max(0, Math.min(100, Number(it.extraDiscount   ?? 0)));
+      const gstRate   = Number(it.gstRate   ?? p.gstRate ?? 0);
+      const packUnit  = it.packagingUnit || 'unit';
 
       const lineBase      = price * qty;
       const discAmt       = lineBase * (pDisc / 100);
@@ -366,7 +380,7 @@ function edit(saleId, { items = [], billDiscount = 0, amountPaid = null }) {
       totalExtraDiscAmt += extraDiscAmt;
       gstTotal          += gstAmt;
 
-      return { p, qty, price, pDisc, discAmt, eDisc, extraDiscAmt, gstRate, gstAmt, lineTotal, packUnit };
+      return { p, qty, price, costPrice, pDisc, discAmt, eDisc, extraDiscAmt, gstRate, gstAmt, lineTotal, packUnit };
     });
 
     const totalItemDiscAmt = totalProdDiscAmt + totalExtraDiscAmt;
@@ -381,7 +395,9 @@ function edit(saleId, { items = [], billDiscount = 0, amountPaid = null }) {
     for (const it of processed) {
       if (it.qty > 0) {
         if (it.p.stockQty < it.qty) throw new Error(`Insufficient stock for ${it.p.name}`);
-        if (hasExtraDiscCols) {
+        if (hasCostPrice && hasExtraDiscCols) {
+          insertItemStmt.run(saleId, it.p.id, it.qty, it.price, it.costPrice, it.pDisc, it.discAmt, it.eDisc, it.extraDiscAmt, it.gstRate, it.gstAmt, it.lineTotal, it.packUnit);
+        } else if (hasExtraDiscCols) {
           insertItemStmt.run(saleId, it.p.id, it.qty, it.price, it.pDisc, it.discAmt, it.eDisc, it.extraDiscAmt, it.gstRate, it.gstAmt, it.lineTotal, it.packUnit);
         } else if (hasExtItemCols) {
           insertItemStmt.run(saleId, it.p.id, it.qty, it.price, it.pDisc, it.discAmt, it.gstRate, it.gstAmt, it.lineTotal, it.packUnit);
