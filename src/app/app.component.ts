@@ -11,6 +11,7 @@ import { ApiService } from './core/services/api.service';
 })
 export class AppComponent implements OnInit {
   storeName: string = '';
+  storeAddress: string = '';
 
   constructor(
     public auth: AuthService,
@@ -29,6 +30,7 @@ export class AppComponent implements OnInit {
     this.api.get<any>('/settings').subscribe(r => {
       const s = r.data;
       this.storeName = s.storeName || '';
+      this.storeAddress = s.storeAddress || '';
     });
   }
 

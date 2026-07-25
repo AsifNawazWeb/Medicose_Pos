@@ -64,9 +64,13 @@
   <mat-sidenav-content class="content">
     <!-- Top Toolbar -->
     <mat-toolbar class="top" role="banner">
-      <button mat-icon-button (click)="snav.toggle()" aria-label="Toggle navigation">
-        <mat-icon>menu</mat-icon>
-      </button>
+      <span class="spacer"></span>
+
+      <!-- Store Info -->
+      <div class="toolbar-store-info" *ngIf="storeName">
+        <span class="toolbar-store-name">{{ storeName }}</span>
+        <span class="toolbar-store-address" *ngIf="storeAddress">{{ storeAddress }}</span>
+      </div>
 
       <span class="spacer"></span>
 

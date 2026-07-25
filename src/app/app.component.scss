@@ -164,14 +164,29 @@ mat-nav-list {
   }
 }
 
-.store-name-toolbar {
-  font-size: 28px;
+.toolbar-store-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+}
+
+.toolbar-store-name {
+  font-size: 32px;
   font-weight: 700;
   color: var(--app-text, #0f172a);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  letter-spacing: 0.5px;
+}
+
+.toolbar-store-address {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--app-muted, #64748b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .spacer {
