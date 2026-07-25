@@ -7,6 +7,8 @@ import { ApiService } from '../../core/services/api.service';
   styleUrls: ['./dashboard.component.scss'],
 })
 export class DashboardComponent implements OnInit {
+  storeName: string = '';
+  storeAddress: string = '';
   stats: any = null;
   top: any[] = [];
   recentTransactions: any[] = [];
@@ -83,6 +85,13 @@ export class DashboardComponent implements OnInit {
   }
 
   loadDashboardData() {
+    // Load store settings for banner
+    this.api.get<any>('/settings').subscribe(r => {
+      const s = r.data;
+      this.storeName = s.storeName || '';
+      this.storeAddress = s.storeAddress || '';
+    });
+
     // Load stats
     this.api.get<any>('/dashboard/stats').subscribe(r => this.stats = r.data);
     

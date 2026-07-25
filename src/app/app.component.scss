@@ -164,6 +164,16 @@ mat-nav-list {
   }
 }
 
+.store-name-toolbar {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--app-text, #0f172a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.5px;
+}
+
 .spacer {
   flex: 1;
 }

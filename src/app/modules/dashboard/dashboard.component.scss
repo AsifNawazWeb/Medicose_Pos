@@ -2,6 +2,42 @@
    PROFESSIONAL DASHBOARD STYLES
    ============================================ */
 
+/* Store Banner */
+.store-banner {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  padding: 24px 32px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.store-banner-left {
+  flex: 1;
+}
+
+.store-banner-name {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.store-banner-address {
+  font-size: 14px;
+  font-weight: 400;
+  opacity: 0.85;
+  margin-top: 6px;
+}
+
+.store-banner-actions {
+  flex-shrink: 0;
+  margin-left: 24px;
+}
+
 /* Stats Grid */
 .stats-grid {
   display: grid;

@@ -1,9 +1,16 @@
-<app-page-header title="Dashboard" subtitle="Real-time overview of sales, stock and performance">
-  <button mat-raised-button color="primary" routerLink="/pos">
-    <mat-icon>point_of_sale</mat-icon>
-    New Bill
-  </button>
-</app-page-header>
+<!-- Store Banner -->
+<div class="store-banner" *ngIf="storeName">
+  <div class="store-banner-left">
+    <div class="store-banner-name">{{ storeName }}</div>
+    <div class="store-banner-address" *ngIf="storeAddress">{{ storeAddress }}</div>
+  </div>
+  <div class="store-banner-actions">
+    <button mat-raised-button color="accent" routerLink="/pos">
+      <mat-icon>point_of_sale</mat-icon>
+      New Bill
+    </button>
+  </div>
+</div>
 
 
 
@@ -14,7 +21,7 @@
       <mat-icon>trending_up</mat-icon>
     </div>
     <div class="stat-content">
-      <div class="stat-value text-center py-2">Rs. {{ (stats?.sales?.revenue || 0) | number:'1.2-2' }}</div>
+      <div class="stat-value text-center py-2">{{ (stats?.sales?.revenue || 0) | number:'1.0-0' }}</div>
       <div class="stat-label text-center">Today's Revenue</div>
       <div class="stat-subtitle text-center">Resets Daily</div>
     </div>
@@ -25,7 +32,7 @@
       <mat-icon>savings</mat-icon>
     </div>
     <div class="stat-content">
-      <div class="stat-value text-center py-2">Rs. {{ (stats?.profit?.profit || 0) | number:'1.2-2' }}</div>
+      <div class="stat-value text-center py-2">{{ (stats?.profit?.profit || 0) | number:'1.0-0' }}</div>
       <div class="stat-label text-center">Today's Profit</div>
       <div class="stat-subtitle text-center">Resets Daily</div>
     </div>
