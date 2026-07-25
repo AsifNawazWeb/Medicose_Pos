@@ -121,8 +121,11 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
     const isBarcodeLike = /^\d{8,}$/.test(query);
 
     if (isBarcodeLike) {
+      // Normalize to first 12 digits for consistent search (DB stores 12 digits)
+      const normalizedBarcode = query.slice(0, 12);
+      
       // Try exact barcode match first
-      this.api.get<any>(`/products/scan/${encodeURIComponent(query)}`).subscribe({
+      this.api.get<any>(`/products/scan/${encodeURIComponent(normalizedBarcode)}`).subscribe({
         next: (r) => {
           if (r?.data) {
             // Exact barcode match — open product in edit mode
@@ -131,10 +134,10 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
             this.openModal(r.data);
             return;
           }
-          // No exact match — fall back to LIKE search
-          this.doGenericSearch(query);
+          // No exact match — fall back to LIKE search with normalized barcode
+          this.doGenericSearch(normalizedBarcode);
         },
-        error: () => this.doGenericSearch(query)
+        error: () => this.doGenericSearch(normalizedBarcode)
       });
     } else {
       this.doGenericSearch(query);
@@ -186,26 +189,17 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
-   * Generates a valid 13-digit EAN-13 barcode.
-   * First 12 digits are random, 13th is the check digit.
+   * Generates a 12-digit EAN-13 base (without check digit).
+   * The 13th check digit is calculated automatically by JsBarcode when printing/displaying.
+   * We store only 12 digits in the database for consistent searching.
    */
   generateEAN13Barcode(): string {
-    // Generate 12 random digits
+    // Generate 12 random digits (no check digit)
     let digits = '';
     for (let i = 0; i < 12; i++) {
       digits += Math.floor(Math.random() * 10).toString();
     }
-
-    // Calculate EAN-13 check digit
-    let sum = 0;
-    for (let i = 0; i < 12; i++) {
-      const digit = parseInt(digits[i], 10);
-      // Odd positions (1-indexed) have weight 1, even positions have weight 3
-      sum += (i % 2 === 0) ? digit : digit * 3;
-    }
-    const checkDigit = (10 - (sum % 10)) % 10;
-
-    return digits + checkDigit.toString();
+    return digits;
   }
 
   /**
@@ -222,7 +216,7 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
       JsBarcode(this.barcodeSvg.nativeElement, value, {
         format: format,
         width: 2,
-        height: 38,
+        height: 36,
         displayValue: true,
         fontSize: 12,
         margin: 3,
@@ -238,8 +232,11 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
     if (row) {
       // Convert expiryDate string to Date object for matDatepicker, or null if empty
       const expiryVal = row.expiryDate ? new Date(row.expiryDate) : null;
+      // Normalize barcode to 12 digits (in case DB has 13-digit legacy barcodes)
+      const barcode12 = row.barcode ? row.barcode.slice(0, 12) : '';
       this.form.patchValue({
         ...row,
+        barcode: barcode12,
         isActive: row.isActive === 1 || row.isActive === true,
         supplierId: row.supplierId ?? null,
         expiryDate: expiryVal,
@@ -289,7 +286,7 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
             JsBarcode(this.printBarcodeSvg.nativeElement, row.barcode, {
               format: format,
               width: 2,
-              height: 38,
+              height: 36,
               displayValue: true,
               fontSize: 12,
               margin: 3,
@@ -336,14 +333,12 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     const barcodeSvgHtml = svgContainer.innerHTML;
 
-    // Build labels HTML
+    // Build labels HTML - only barcode SVG
     let labelsHtml = '';
     for (let i = 0; i < qty; i++) {
       labelsHtml += `
         <div class="barcode-label">
-          <div class="label-name">${product.name}</div>
           ${barcodeSvgHtml}
-          <div class="label-barcode-text">${barcode}</div>
         </div>
       `;
     }
@@ -451,6 +446,10 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
     const payload = { ...this.form.value };
     if (payload.expiryDate instanceof Date) {
       payload.expiryDate = payload.expiryDate.toISOString().split('T')[0];
+    }
+    // Store only first 12 digits of barcode (check digit is calculated by JsBarcode for display/print)
+    if (payload.barcode && payload.barcode.length > 12) {
+      payload.barcode = payload.barcode.slice(0, 12);
     }
     const req = this.editing
       ? this.api.put<any>(`/products/${this.editing.id}`, payload)
