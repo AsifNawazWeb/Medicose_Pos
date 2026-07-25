@@ -6,14 +6,29 @@ function summary(req, res) {
   res.json({ ok: true, data: Reports.summary({ from, to }) });
 }
 
+function revenueTrend(req, res) {
+  const from = req.query.from ? String(req.query.from) : null;
+  const to = req.query.to ? String(req.query.to) : null;
+  res.json({ ok: true, data: Reports.revenueTrend({ from, to }) });
+}
+
+function salesByCategory(req, res) {
+  const from = req.query.from ? String(req.query.from) : null;
+  const to = req.query.to ? String(req.query.to) : null;
+  res.json({ ok: true, data: Reports.salesByCategory({ from, to }) });
+}
+
+function topProducts(req, res) {
+  const from = req.query.from ? String(req.query.from) : null;
+  const to = req.query.to ? String(req.query.to) : null;
+  const limit = Number(req.query.limit || 10);
+  res.json({ ok: true, data: Reports.topProducts({ from, to, limit }) });
+}
+
 function gst(req, res) {
   const from = req.query.from ? String(req.query.from) : null;
   const to = req.query.to ? String(req.query.to) : null;
   res.json({ ok: true, data: Reports.gstReport({ from, to }) });
-}
-
-function topProducts(req, res) {
-  res.json({ ok: true, data: Reports.topProducts({ limit: Number(req.query.limit || 10) }) });
 }
 
 // Placeholders to satisfy "15+ reports" without breaking UI
@@ -23,8 +38,10 @@ function placeholder(name) {
 
 module.exports = {
   summary,
-  gst,
+  revenueTrend,
+  salesByCategory,
   topProducts,
+  gst,
   inventoryValuation: placeholder('inventoryValuation'),
   salesByDay: placeholder('salesByDay'),
   salesByCashier: placeholder('salesByCashier'),

@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { ChartConfiguration } from 'chart.js';
 import { ApiService } from '../../core/services/api.service';
 
+export type DatePreset = 'today' | 'this_week' | 'this_month' | 'this_year' | 'custom';
+
 @Component({
   templateUrl: './reports.component.html',
   styleUrls: ['./reports.component.scss'],
@@ -9,33 +11,30 @@ import { ApiService } from '../../core/services/api.service';
 export class ReportsComponent implements OnInit {
   from = '';
   to = '';
+  selectedPreset: DatePreset = 'this_month';
   summary: any = null;
-  gstRows: any[] = [];
+  isLoading = false;
 
   // Charts data
   revenueChartData?: ChartConfiguration<'line'>['data'];
   categoryChartData?: ChartConfiguration<'doughnut'>['data'];
   topProductsData?: ChartConfiguration<'bar'>['data'];
 
-  gstLine: ChartConfiguration<'bar'>['data'] = { labels: [], datasets: [] };
-
   // Chart options
   revenueChartOptions: ChartConfiguration<'line'>['options'] = {
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(15, 23, 42, 0.9)',
         padding: 12,
         cornerRadius: 8,
         callbacks: {
           label: (context) => {
             const value = context.parsed.y;
-
-            if (value === null) return 'GST: N/A';
-
-            return `GST: Rs. ${value.toFixed(2)}`;
+            if (value === null || value === undefined) return 'Revenue: Rs. 0.00';
+            return `Revenue: Rs. ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
           }
         }
       }
@@ -44,7 +43,7 @@ export class ReportsComponent implements OnInit {
       y: {
         beginAtZero: true,
         ticks: {
-          callback: (value) => 'Rs. ' + value
+          callback: (value) => 'Rs. ' + Number(value).toLocaleString()
         },
         grid: { color: 'rgba(0, 0, 0, 0.05)' }
       },
@@ -54,16 +53,16 @@ export class ReportsComponent implements OnInit {
     },
     elements: {
       line: {
-        tension: 0.4,
+        tension: 0.35,
         borderWidth: 3,
-        borderColor: '#10b981',
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        borderColor: '#4f46e5',
+        backgroundColor: 'rgba(79, 70, 229, 0.12)',
         fill: true
       },
       point: {
-        radius: 5,
-        backgroundColor: '#10b981',
-        borderColor: '#fff',
+        radius: 4,
+        backgroundColor: '#4f46e5',
+        borderColor: '#ffffff',
         borderWidth: 2,
         hoverRadius: 7
       }
@@ -72,66 +71,39 @@ export class ReportsComponent implements OnInit {
 
   categoryChartOptions: ChartConfiguration<'doughnut'>['options'] = {
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'right',
         labels: {
-          padding: 15,
-          font: { size: 12 },
+          padding: 16,
+          font: { size: 12, family: 'Inter, system-ui, sans-serif' },
           usePointStyle: true
         }
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        padding: 12,
-        cornerRadius: 8
-      }
-    }
-  };
-
-  gstChartOptions: ChartConfiguration<'bar'>['options'] = {
-    responsive: true,
-    maintainAspectRatio: true,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(15, 23, 42, 0.9)',
         padding: 12,
         cornerRadius: 8,
         callbacks: {
           label: (context) => {
-            const value = context.parsed.y;
-
-            if (value === null) return 'GST: N/A';
-
-            return `GST: Rs. ${value.toFixed(2)}`;
+            const label = context.label || '';
+            const value = context.parsed || 0;
+            return ` ${label}: Rs. ${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
           }
         }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          callback: (value) => 'Rs. ' + value
-        },
-        grid: { color: 'rgba(0, 0, 0, 0.05)' }
-      },
-      x: {
-        grid: { display: false }
       }
     }
   };
 
   topProductsOptions: ChartConfiguration<'bar'>['options'] = {
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
     indexAxis: 'y',
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(15, 23, 42, 0.9)',
         padding: 12,
         cornerRadius: 8,
         callbacks: {
@@ -151,124 +123,145 @@ export class ReportsComponent implements OnInit {
     }
   };
 
-  constructor(private api: ApiService) {
-    const today = new Date();
-    const lastMonth = new Date();
-    lastMonth.setDate(today.getDate() - 30);
-
-    this.to = today.toISOString().split('T')[0];
-    this.from = lastMonth.toISOString().split('T')[0];
-  }
+  constructor(private api: ApiService) {}
 
   ngOnInit() {
+    this.selectPreset('this_month');
+  }
+
+  formatDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  selectPreset(preset: DatePreset) {
+    this.selectedPreset = preset;
+    const now = new Date();
+
+    if (preset === 'today') {
+      this.from = this.formatDate(now);
+      this.to = this.formatDate(now);
+    } else if (preset === 'this_week') {
+      const current = new Date();
+      const day = current.getDay();
+      const diff = current.getDate() - day + (day === 0 ? -6 : 1); // Monday
+      const monday = new Date(current.setDate(diff));
+      this.from = this.formatDate(monday);
+      this.to = this.formatDate(new Date());
+    } else if (preset === 'this_month') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      this.from = this.formatDate(firstDay);
+      this.to = this.formatDate(new Date());
+    } else if (preset === 'this_year') {
+      const firstDay = new Date(now.getFullYear(), 0, 1);
+      this.from = this.formatDate(firstDay);
+      this.to = this.formatDate(new Date());
+    }
+    // 'custom' maintains current manually selected from/to dates
+
+    this.load();
+  }
+
+  onCustomDateChange() {
+    this.selectedPreset = 'custom';
     this.load();
   }
 
   load() {
-    const params: any = {};
-    if (this.from) params.from = this.from;
-    if (this.to) params.to = this.to;
+    if (!this.from || !this.to) return;
+    this.isLoading = true;
+    const params = { from: this.from, to: this.to };
 
-    // Load summary
-    this.api.get<any>('/reports/summary', params).subscribe(r => {
-      this.summary = r.data;
+    // 1. Load summary metrics
+    this.api.get<any>('/reports/summary', params).subscribe({
+      next: (r) => {
+        this.summary = r.data || {};
+      },
+      error: (err) => console.error('Failed to load summary', err)
     });
 
-    // Load GST data
-    this.api.get<any>('/reports/gst', params).subscribe(r => {
-      this.gstRows = r.data || [];
-      this.gstLine.labels = this.gstRows.map(x => x.day);
-      this.gstLine.datasets = [{
-        data: this.gstRows.map(x => x.gstValue),
-        backgroundColor: '#4f46e5',
-        borderRadius: 8,
-        label: 'GST'
-      }];
+    // 2. Load revenue trend chart
+    this.api.get<any>('/reports/revenue-trend', params).subscribe({
+      next: (r) => {
+        const trend = r.data || [];
+        const labels = trend.map((t: any) => {
+          if (!t.date) return '';
+          const parts = t.date.split('-');
+          if (parts.length === 3) {
+            const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          }
+          return t.date;
+        });
+        const values = trend.map((t: any) => t.revenue);
+
+        this.revenueChartData = {
+          labels,
+          datasets: [{
+            label: 'Revenue',
+            data: values,
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79, 70, 229, 0.12)',
+            fill: true,
+            tension: 0.35
+          }]
+        };
+      },
+      error: (err) => console.error('Failed to load revenue trend', err)
     });
 
-    // Load revenue trend
-    this.api.get<any>('/sales', params).subscribe(r => {
-      const sales = r.data ?? [];
+    // 3. Load sales by category
+    this.api.get<any>('/reports/sales-by-category', params).subscribe({
+      next: (r) => {
+        const categories = r.data || [];
+        const labels = categories.map((c: any) => c.category || 'General');
+        const values = categories.map((c: any) => c.totalRevenue);
 
-      if (!sales.length) return;
-
-      const dailyRevenue = this.aggregateByDate(sales);
-
-      this.revenueChartData = {
-        labels: dailyRevenue.labels,
-        datasets: [{
-          label: 'Revenue',
-          data: dailyRevenue.values,
-          borderColor: '#10b981',
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
-          fill: true,
-          tension: 0.4
-        }]
-      };
+        this.categoryChartData = {
+          labels,
+          datasets: [{
+            data: values,
+            backgroundColor: [
+              '#4f46e5',
+              '#10b981',
+              '#f59e0b',
+              '#3b82f6',
+              '#ec4899',
+              '#8b5cf6',
+              '#14b8a6',
+              '#f97316',
+              '#06b6d4',
+              '#64748b'
+            ],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        };
+      },
+      error: (err) => console.error('Failed to load category sales', err)
     });
 
-
-    // Load category distribution
-    this.api.get<any>('/products').subscribe(r => {
-      const products = r.data || [];
-      const categoryCount: any = {};
-
-      products.forEach((p: any) => {
-        const cat = p.category || 'Other';
-        categoryCount[cat] = (categoryCount[cat] || 0) + 1;
-      });
-
-      const categories = Object.keys(categoryCount);
-      const counts = Object.values(categoryCount);
-
-      this.categoryChartData = {
-        labels: categories,
-        datasets: [{
-          data: counts as number[],
-          backgroundColor: [
-            '#4f46e5',
-            '#10b981',
-            '#f59e0b',
-            '#ef4444',
-            '#8b5cf6',
-            '#3b82f6',
-            '#ec4899',
-            '#14b8a6'
-          ],
-          borderWidth: 2,
-          borderColor: '#fff'
-        }]
-      };
+    // 4. Load top products
+    this.api.get<any>('/reports/top-products', { ...params, limit: 10 }).subscribe({
+      next: (r) => {
+        const products = r.data || [];
+        this.topProductsData = {
+          labels: products.map((p: any) => p.name),
+          datasets: [{
+            data: products.map((p: any) => p.qtySold),
+            backgroundColor: '#10b981',
+            borderRadius: 6,
+            label: 'Quantity Sold'
+          }]
+        };
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load top products', err);
+        this.isLoading = false;
+      }
     });
-
-    // Load top products
-    this.api.get<any>('/dashboard/top-products').subscribe(r => {
-      const products = (r.data || []).slice(0, 8);
-
-      this.topProductsData = {
-        labels: products.map((p: any) => p.name),
-        datasets: [{
-          data: products.map((p: any) => p.qtySold),
-          backgroundColor: '#4f46e5',
-          borderRadius: 6,
-          label: 'Quantity Sold'
-        }]
-      };
-    });
-  }
-
-  aggregateByDate(sales: any[]) {
-    const dateMap: any = {};
-
-    sales.forEach(sale => {
-      const date = new Date(sale.createdAt).toISOString().split('T')[0];
-      dateMap[date] = (dateMap[date] || 0) + sale.grandTotal;
-    });
-
-    const sortedDates = Object.keys(dateMap).sort();
-    return {
-      labels: sortedDates.map(d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
-      values: sortedDates.map(d => dateMap[d])
-    };
   }
 }

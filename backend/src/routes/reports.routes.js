@@ -3,6 +3,8 @@ const Ctrl = require('../controllers/reports.controller');
 const { auth } = require('../middlewares/auth.middleware');
 
 router.get('/summary', auth(true), Ctrl.summary);
+router.get('/revenue-trend', auth(true), Ctrl.revenueTrend);
+router.get('/sales-by-category', auth(true), Ctrl.salesByCategory);
 router.get('/top-products', auth(true), Ctrl.topProducts);
 router.get('/gst', auth(true), Ctrl.gst);
 
