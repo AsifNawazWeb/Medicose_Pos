@@ -105,8 +105,8 @@ function updateStock(req, res) {
 
 function remove(req, res) {
   const id = Number(req.params.id);
-  Product.remove(id);
-  res.json({ ok: true });
+  const row = Product.remove(id);
+  res.json({ ok: true, data: row });
 }
 
 module.exports = { list, get, scan, create, update, updateStock, remove };

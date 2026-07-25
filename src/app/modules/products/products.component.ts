@@ -487,14 +487,14 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   remove(row: any) {
-    if (!confirm('Delete this product permanently?')) return;
+    if (!confirm('Remove this product from inventory?')) return;
     this.api.delete<any>(`/products/${row.id}`).subscribe({
       next: () => {
-        this.toast.success('Product deleted successfully');
+        this.toast.success('Product removed successfully');
         this.load();
       },
       error: (err) => {
-        this.toast.error(err?.error?.message || 'Failed to delete product');
+        this.toast.error(err?.error?.message || 'Failed to remove product');
       }
     });
   }

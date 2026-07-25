@@ -9,6 +9,7 @@ function list({ q = '', category = '', limit = 50, offset = 0 }) {
     FROM products p LEFT JOIN suppliers s ON s.id = p.supplierId
     WHERE (p.name LIKE ? OR p.barcode LIKE ? OR p.sku LIKE ?)
       AND (? = '' OR p.category = ?)
+      AND p.isActive = 1
     ORDER BY p.updatedAt DESC LIMIT ? OFFSET ?
   `).all(like, like, like, cat, cat, limit, offset);
 }
@@ -74,8 +75,8 @@ function updateStock(id, stockQty) {
 }
 
 function remove(id) {
-  getDb().prepare('DELETE FROM products WHERE id=?').run(id);
-  return true;
+  getDb().prepare('UPDATE products SET isActive=0,updatedAt=? WHERE id=?').run(new Date().toISOString(), id);
+  return getById(id);
 }
 
 module.exports = { list, getById, getByBarcode, create, update, updateStock, remove };
