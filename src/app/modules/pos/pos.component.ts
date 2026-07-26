@@ -14,7 +14,7 @@ type CartItem = {
   price: number;
   gstRate: number;
   productDiscount: number;  // % per-product discount (Step 1)
-  extraDiscount: number;    // % extra per-item discount applied AFTER productDiscount (Step 2)
+  extraDiscount: number;   // % extra per-item discount applied AFTER productDiscount (Step 2)
   lineTotal: number;
   packagingUnit: 'unit' | 'strip' | 'box';
   unitsPerStrip: number;
@@ -178,7 +178,7 @@ export class PosComponent implements OnInit {
           return;
         }
         // Step 2: Fall back to name/barcode LIKE search
-        this.api.get<any>('/products', { q: cleanCode, limit: 1 }).subscribe(r2 => {
+        this.api.get<any>('/products', { q: searchCode, limit: 1 }).subscribe(r2 => {
           const products = r2.data || [];
           if (products.length === 0) { this.toast.error('Product not found'); return; }
           this.selectProduct(products[0]);
@@ -186,7 +186,7 @@ export class PosComponent implements OnInit {
       },
       error: () => {
         // Scan endpoint failed — fall back to generic search
-        this.api.get<any>('/products', { q: cleanCode, limit: 1 }).subscribe(r2 => {
+        this.api.get<any>('/products', { q: searchCode, limit: 1 }).subscribe(r2 => {
           const products = r2.data || [];
           if (products.length === 0) { this.toast.error('Product not found'); return; }
           this.selectProduct(products[0]);

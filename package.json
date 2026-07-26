@@ -22,7 +22,9 @@
     "start": "node scripts/start-electron.js",
     "build-win": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -w --x64",
     "build-linux": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -l --x64",
-    "clean": "taskkill /F /IM electron.exe /T 2>nul & taskkill /F /IM node.exe /T 2>nul & rimraf node_modules/better-sqlite3/build & npm rebuild better-sqlite3"
+    "clean-build": "rimraf node_modules/better-sqlite3/build",
+    "create-build": "npm rebuild better-sqlite3",
+    "remove-task": "taskkill /F /IM electron.exe /T 2>nul & taskkill /F /IM node.exe /T"
   },
   "dependencies": {
     "@angular/animations": "^17.3.12",
@@ -78,7 +80,7 @@
     "npmRebuild": true,
     "publish": [
       {
-        "provider": "github",
+        "provider": "AsifTech",
         "owner": "AsifNawazWeb",
         "repo": "Medicose_Pos"
       }

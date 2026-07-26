@@ -319,11 +319,11 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
     try {
       JsBarcode(svgEl, barcode, {
         format: format,
-        width: 2,
-        height: 50,
+        width: 1.5,
+        height: 38,
         displayValue: true,
-        fontSize: 14,
-        margin: 5,
+        fontSize: 11,
+        margin: 3,
         background: '#ffffff',
       });
     } catch (e) {
@@ -364,24 +364,24 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
         <title>Print Barcode Labels</title>
         <style>
           @page {
-            margin: 10mm;
+            margin: 5mm;
           }
           * { box-sizing: border-box; margin: 0; padding: 0; }
           body {
             font-family: Arial, Helvetica, sans-serif;
-            padding: 10px;
+            padding: 5px;
           }
           .labels-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 5px;
             justify-content: flex-start;
           }
           .barcode-label {
-            width: 200px;
+            width: 150px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            padding: 10px;
+            padding: 5px;
             text-align: center;
             page-break-inside: avoid;
             break-inside: avoid;
