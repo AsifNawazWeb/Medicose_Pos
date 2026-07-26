@@ -158,6 +158,9 @@ export class PosComponent implements OnInit {
     const cleanCode = String(code || '').trim();
     if (!cleanCode) return;
 
+    // Normalize to first 12 digits for consistent search (DB stores 12 digits)
+    const searchCode = cleanCode.slice(0, 12);
+
     // Deduplicate rapid scan triggers of the exact same barcode within 800ms
     const now = Date.now();
     if (this.lastScannedCode === cleanCode && (now - this.lastScanTime) < 800) {
@@ -167,7 +170,7 @@ export class PosComponent implements OnInit {
     this.lastScanTime = now;
 
     // Step 1: Try exact barcode match via dedicated scan endpoint
-    this.api.get<any>(`/products/scan/${encodeURIComponent(cleanCode)}`).subscribe({
+    this.api.get<any>(`/products/scan/${encodeURIComponent(searchCode)}`).subscribe({
       next: (r) => {
         if (r?.data) {
           // Exact barcode match — add directly to cart
