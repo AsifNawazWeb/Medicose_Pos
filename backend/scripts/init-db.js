@@ -69,7 +69,9 @@ function run() {
     `).run(adminEmail, passwordHash, now, now);
   }
 
-  // ── Seed demo products (idempotent) ──
+  // ── Demo product seeding REMOVED for clean customer delivery ──
+  // To re-enable demo products for testing, uncomment the block below.
+  /*
   const hasAnyProducts = db.prepare('SELECT COUNT(*) AS c FROM products').get().c > 0;
   if (!hasAnyProducts) {
     const supInfo = db.prepare(`
@@ -88,7 +90,7 @@ function run() {
     stmt.run('Cough Syrup 100ml', 'MED-002', '890000000002', 'Syrup',  'B-0002', 120, 90,  0, 50,  10, null, supplierId, now, now);
     stmt.run('Vitamin C 1000mg',  'MED-003', '890000000003', 'Tablet', 'B-0003', 250, 180, 0, 40,  10, null, supplierId, now, now);
   }
-
+  */
   db.close();
   console.log('✅ Database initialized at:', DB_PATH);
   console.log('✅ Backups directory      :', BACKUP_DIR);

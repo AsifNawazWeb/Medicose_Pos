@@ -21,7 +21,8 @@
     "build": "ng build renderer --configuration production --base-href ./",
     "start": "node scripts/start-electron.js",
     "build-win": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -w --x64",
-    "build-linux": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -l --x64"
+    "build-linux": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -l --x64",
+    "clean": "taskkill /F /IM electron.exe /T 2>nul & taskkill /F /IM node.exe /T 2>nul & rimraf node_modules/better-sqlite3/build & npm rebuild better-sqlite3"
   },
   "dependencies": {
     "@angular/animations": "^17.3.12",
