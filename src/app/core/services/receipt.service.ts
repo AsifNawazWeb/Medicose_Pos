@@ -7,7 +7,7 @@ export class ReceiptService {
     const storeName    = esc(data.storeName    || 'Yashfeen Medicose Pabbi');
     const storeAddress = esc(data.storeAddress || 'Pabbi Bazar');
     const storePhone   = esc(data.storePhone   || '0333-1234567');
-    const footer       = esc(data.receiptFooter || 'Developed by: AsifTech');
+    const footer       = esc('Developed by: AsifTech (03139329499)');
     const invoiceNo    = esc(data.invoiceNo    || 'N/A');
     const createdAt    = formatDate(data.createdAt);
     const customerName = esc(data.customerName || '');
