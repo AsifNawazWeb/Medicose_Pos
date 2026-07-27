@@ -19,4 +19,24 @@ function getDb() {
   return db;
 }
 
-module.exports = { getDb };
+/**
+ * Close the current database connection and clear the cached instance.
+ * Must be called before overwriting the database file (e.g., during restore).
+ */
+function closeDb() {
+  if (db) {
+    try { db.close(); } catch (_) {}
+    db = null;
+  }
+}
+
+/**
+ * Close and reopen the database connection.
+ * Used after restoring a backup to ensure the app reads from the restored file.
+ */
+function reopenDb() {
+  closeDb();
+  return getDb();
+}
+
+module.exports = { getDb, closeDb, reopenDb };

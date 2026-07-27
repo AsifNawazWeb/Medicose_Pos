@@ -4,6 +4,7 @@ const fs = require('fs');
 const Settings = require('../models/settings.model');
 const { config } = require('../config/env');
 const { copyDb, restoreDb } = require('../services/backup.service');
+const { closeDb, reopenDb } = require('../config/db');
 
 const schema = z.object({
   storeName: z.string().min(2).default('Medical POS'),
@@ -62,10 +63,22 @@ function restore(req, res) {
       return res.status(400).json({ ok: false, error: { message: 'No backup file uploaded' } });
     }
     const uploadedFile = req.file.path;
-    const result = restoreDb(uploadedFile, config.dbPath);
+
+    // Close the active database connection so the file can be safely overwritten
+    closeDb();
+
+    let result;
+    try {
+      result = restoreDb(uploadedFile, config.dbPath);
+    } finally {
+      // Always reopen the database connection — even if restoreDb throws,
+      // we need the app to continue functioning with the old database
+      reopenDb();
+    }
+
     // Clean up the uploaded temp file
     try { fs.unlinkSync(uploadedFile); } catch (_) {}
-    res.json({ ok: true, data: { message: 'Database restored successfully. Please restart the application for changes to take full effect.' } });
+    res.json({ ok: true, data: { message: 'Database restored successfully.' } });
   } catch (err) {
     console.error('Restore error:', err);
     // Clean up uploaded file on error
