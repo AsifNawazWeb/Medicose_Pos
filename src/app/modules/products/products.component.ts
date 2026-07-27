@@ -17,7 +17,7 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('printBarcodeSvg') printBarcodeSvg!: ElementRef<SVGSVGElement>;
   @ViewChild('printFrame') printFrame!: ElementRef<HTMLIFrameElement>;
 
-  categories = ['Tablet', 'Capsule', 'Injection', 'Syrup', 'Cream', 'Drops', 'Ointment', 'Powder', 'Strip', 'Other'];
+  categories = ['Tablet', 'Capsule', 'Injection', 'Syrup', 'Cream', 'Drops', 'Ointment', 'Powder', 'Strip', 'Spray', 'Moisturizer', 'Soap', 'Jel', 'Serum', 'Other'];
   categoryFilter = '';
   stockFilter = '';
   // Generate shelves A1–M100
