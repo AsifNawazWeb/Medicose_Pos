@@ -115,7 +115,7 @@
             <mat-form-field appearance="outline" class="full-width">
               <mat-icon matPrefix>person_search</mat-icon>
               <input matInput [formControl]="customerSearchCtrl" [matAutocomplete]="customerAuto"
-                placeholder="Search by name or phone..." />
+                placeholder="Search by name or phone..." (keydown.enter)="onCustomerEnter()" />
               <mat-autocomplete #customerAuto="matAutocomplete">
 
                 <!-- Loading indicator -->
@@ -176,12 +176,7 @@
 
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Name *</mat-label>
-              <input matInput [formControl]="newCustomerNameCtrl" placeholder="Full name" />
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Phone (optional)</mat-label>
-              <input matInput [formControl]="newCustomerPhoneCtrl" placeholder="10-digit mobile" />
+              <input matInput [formControl]="newCustomerNameCtrl" placeholder="Full name" (keydown.enter)="checkout()" />
             </mat-form-field>
 
             <div class="new-customer-note">

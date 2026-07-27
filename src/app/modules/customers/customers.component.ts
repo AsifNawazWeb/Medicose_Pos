@@ -10,10 +10,13 @@ import { MatDialog } from '@angular/material/dialog';
 })
 export class CustomersComponent implements OnInit {
   @ViewChild('supplierDialog') supplierDialog!: TemplateRef<any>;
+  @ViewChild('purchasesDialog') purchasesDialog!: TemplateRef<any>;
 
   rows: any[] = [];
   editing: any = null;
   form: any;
+  purchases: any[] = [];
+  selectedCustomer: any = null;
 
   constructor(
     private fb: FormBuilder,
@@ -75,9 +78,17 @@ export class CustomersComponent implements OnInit {
       return;
     }
 
+    const payload = { ...this.form.value };
+    // Sanitize: empty email → null (Zod .email() rejects empty string)
+    if (!payload.email) payload.email = null;
+    // Sanitize: empty loyaltyPoints → 0 (Zod .number() rejects empty string)
+    if (payload.loyaltyPoints === '' || payload.loyaltyPoints === null || payload.loyaltyPoints === undefined) {
+      payload.loyaltyPoints = 0;
+    }
+
     const req = this.editing
-      ? this.api.put<any>(`/customers/${this.editing.id}`, this.form.value)
-      : this.api.post<any>('/customers', this.form.value);
+      ? this.api.put<any>(`/customers/${this.editing.id}`, payload)
+      : this.api.post<any>('/customers', payload);
 
     req.subscribe({
       next: () => {
@@ -101,6 +112,19 @@ export class CustomersComponent implements OnInit {
       },
       error: (err) => {
         this.toast.error(err?.error?.message || 'Failed to delete customer');
+      }
+    });
+  }
+
+  viewPurchases(customer: any) {
+    this.selectedCustomer = customer;
+    this.api.get<any>(`/customers/${customer.id}/sales`).subscribe({
+      next: (r) => {
+        this.purchases = r.data || [];
+        this.dialog.open(this.purchasesDialog, { width: '800px', maxWidth: '95vw' });
+      },
+      error: (err) => {
+        this.toast.error('Failed to load purchase history');
       }
     });
   }

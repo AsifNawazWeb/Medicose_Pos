@@ -440,6 +440,15 @@ function edit(saleId, { items = [], billDiscount = 0, amountPaid = null }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // LEDGER
 // ─────────────────────────────────────────────────────────────────────────────
+function getByCustomerId(customerId) {
+  const db = getDb();
+  return db.prepare(`
+    SELECT s.*, c.name AS customerName, c.phone AS customerPhone
+    FROM sales s LEFT JOIN customers c ON c.id = s.customerId
+    WHERE s.customerId = ? ORDER BY s.createdAt DESC
+  `).all(customerId);
+}
+
 function getCustomerLedger(customerId) {
   const db = getDb();
   const { hasLedger } = getSchemaInfo(db);
@@ -478,4 +487,4 @@ function day(iso) {
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
 }
 
-module.exports = { list, getById, create, edit, getCustomerLedger, recordPayment };
+module.exports = { list, getById, create, edit, getByCustomerId, getCustomerLedger, recordPayment };

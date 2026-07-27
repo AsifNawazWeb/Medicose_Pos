@@ -49,6 +49,16 @@ function remove(req, res) {
   } catch (err) { res.status(500).json({ ok: false, message: err.message }); }
 }
 
+function getSales(req, res) {
+  try {
+    const customerId = Number(req.params.id);
+    const data = Sales.getByCustomerId(customerId);
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: err.message });
+  }
+}
+
 function getLedger(req, res) {
   try {
     const ledger = Sales.getCustomerLedger(Number(req.params.id));
@@ -57,4 +67,4 @@ function getLedger(req, res) {
   } catch (err) { res.status(500).json({ ok: false, message: err.message }); }
 }
 
-module.exports = { list, get, create, update, remove, getLedger };
+module.exports = { list, get, create, update, remove, getSales, getLedger };

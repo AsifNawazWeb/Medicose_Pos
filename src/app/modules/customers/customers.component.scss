@@ -232,6 +232,65 @@ mat-dialog-actions {
   }
 }
 
+/* Purchase History Table */
+.purchases-table {
+  overflow-x: auto;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      white-space: nowrap;
+    }
+
+    th {
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #64748b;
+      background: #f8fafc;
+    }
+
+    td {
+      color: var(--app-text, #0f172a);
+    }
+
+    tbody tr:hover {
+      background: rgba(79, 70, 229, 0.04);
+    }
+
+    .text-danger {
+      color: #d32f2f !important;
+      font-weight: 600;
+    }
+  }
+}
+
+.empty-purchases {
+  text-align: center;
+  padding: 40px 20px;
+  color: #64748b;
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    opacity: 0.3;
+    margin-bottom: 12px;
+  }
+
+  p {
+    font-size: 14px;
+    margin: 0;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .suppliers-grid {

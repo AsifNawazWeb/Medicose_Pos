@@ -6,7 +6,7 @@
 </app-page-header>
 
 <div class="suppliers-grid" *ngIf="rows.length > 0; else noSuppliers">
-  <mat-card class="customer-card" *ngFor="let customer of rows">
+  <mat-card class="customer-card" *ngFor="let customer of rows" (click)="viewPurchases(customer)" style="cursor:pointer">
     <mat-card-content>
       <div class="customer-header d-flex justify-content-between align-items-center">
       
@@ -65,6 +65,51 @@
   </div>
 </ng-template>
 
+<!-- Purchase History Dialog -->
+<ng-template #purchasesDialog>
+  <h2 mat-dialog-title>
+    <mat-icon>receipt_long</mat-icon>
+    Purchase History — {{ selectedCustomer?.name }}
+  </h2>
+  <mat-dialog-content>
+    <div class="purchases-table" *ngIf="purchases.length > 0; else noPurchases">
+      <table>
+        <thead>
+          <tr>
+            <th>Invoice #</th>
+            <th>Date</th>
+            <th>Items</th>
+            <th>Total</th>
+            <th>Paid</th>
+            <th>Balance</th>
+            <th>Method</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let sale of purchases">
+            <td><strong>{{ sale.invoiceNo }}</strong></td>
+            <td>{{ sale.createdAt | date:'dd/MM/yyyy hh:mm a' }}</td>
+            <td>{{ sale.totalItems }}</td>
+            <td>Rs. {{ sale.grandTotal | number:'1.2-2' }}</td>
+            <td>Rs. {{ sale.amountPaid | number:'1.2-2' }}</td>
+            <td [class.text-danger]="sale.balanceDue > 0">Rs. {{ sale.balanceDue | number:'1.2-2' }}</td>
+            <td>{{ sale.paymentMethod }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noPurchases>
+      <div class="empty-purchases">
+        <mat-icon>receipt</mat-icon>
+        <p>No purchases found for this customer.</p>
+      </div>
+    </ng-template>
+  </mat-dialog-content>
+  <mat-dialog-actions>
+    <button mat-stroked-button mat-dialog-close>Close</button>
+  </mat-dialog-actions>
+</ng-template>
+
 <!-- Add/Edit Supplier Modal -->
 <ng-template #supplierDialog>
   <h2 mat-dialog-title>
@@ -75,7 +120,7 @@
     <form [formGroup]="form" class="customer-form">
       <div class="form-row">
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Supplier Name *</mat-label>
+          <mat-label>Customer Name *</mat-label>
           <input matInput formControlName="name" placeholder="Enter customer name" required />
           <mat-icon matPrefix>business</mat-icon>
         </mat-form-field>
@@ -83,8 +128,8 @@
 
       <div class="form-row-split">
         <mat-form-field appearance="outline">
-          <mat-label>Phone *</mat-label>
-          <input type="number" matInput formControlName="phone" placeholder="Phone number" required/>
+          <mat-label>Phone</mat-label>
+          <input type="number" matInput formControlName="phone" placeholder="Phone number" />
           <mat-icon matPrefix>call</mat-icon>
         </mat-form-field>
 
@@ -98,7 +143,7 @@
       <div class="form-row">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Address</mat-label>
-          <textarea matInput formControlName="address" rows="2" placeholder="Full address" required></textarea>
+          <textarea matInput formControlName="address" rows="2" placeholder="Full address"></textarea>
           <mat-icon matPrefix>place</mat-icon>
         </mat-form-field>
       </div>

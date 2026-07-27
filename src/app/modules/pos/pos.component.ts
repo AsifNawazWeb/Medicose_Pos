@@ -55,6 +55,7 @@ export class PosComponent implements OnInit {
   isNewCustomer = false;
   newCustomerNameCtrl = new FormControl('');
   newCustomerPhoneCtrl = new FormControl('');
+  private lastCustomerSearchText = '';
 
   // Bill controls
   discountCtrl = new FormControl(0);              // legacy flat discount (kept for backward compat)
@@ -103,6 +104,10 @@ export class PosComponent implements OnInit {
       debounceTime(200), distinctUntilChanged(),
       switchMap(v => {
         const q = String(v || '').trim();
+        // Save the last real search text (before autocomplete overwrites it with sentinel)
+        if (q && q !== CREATE_NEW_CUSTOMER) {
+          this.lastCustomerSearchText = q;
+        }
         // Only reset if user typed something different
         if (!this.selectedCustomer || q !== this.selectedCustomer.name) {
           this.selectedCustomer = null;
@@ -128,7 +133,8 @@ export class PosComponent implements OnInit {
   selectCreateNew() {
     this.isNewCustomer = true;
     this.selectedCustomer = null;
-    const typed = String(this.customerSearchCtrl.value || '').trim();
+    // Use saved text — autocomplete overwrites the control value with the sentinel before click fires
+    const typed = this.lastCustomerSearchText || String(this.customerSearchCtrl.value || '').trim();
     this.newCustomerNameCtrl.setValue(typed);
     this.newCustomerPhoneCtrl.setValue('');
     this.customerSuggestions = [];
@@ -141,6 +147,17 @@ export class PosComponent implements OnInit {
     this.customerSuggestions = [];
     this.newCustomerNameCtrl.setValue('');
     this.newCustomerPhoneCtrl.setValue('');
+  }
+
+  /** Enter key on customer search input: empty→warning, has text→create customer + checkout */
+  onCustomerEnter() {
+    const typed = String(this.customerSearchCtrl.value || '').trim();
+    if (!typed) {
+      this.toast.warning('Please enter a customer name');
+      return;
+    }
+    this.selectCreateNew();
+    this.checkout();
   }
 
   // ── Products / Cart ───────────────────────────────────────────────────────
