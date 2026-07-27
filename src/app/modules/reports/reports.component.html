@@ -43,14 +43,20 @@
     <div class="date-picker-group">
       <mat-form-field appearance="outline" class="date-field">
         <mat-label>From</mat-label>
-        <input matInput type="date" [(ngModel)]="from" (change)="onCustomDateChange()" />
-        <mat-icon matPrefix>calendar_today</mat-icon>
+        <input matInput [matDatepicker]="fromPicker" [(ngModel)]="from" (dateChange)="onCustomDateChange()" />
+        <mat-datepicker-toggle matPrefix [for]="fromPicker">
+          <mat-icon matDatepickerToggleIcon>calendar_today</mat-icon>
+        </mat-datepicker-toggle>
+        <mat-datepicker #fromPicker></mat-datepicker>
       </mat-form-field>
       
       <mat-form-field appearance="outline" class="date-field">
         <mat-label>To</mat-label>
-        <input matInput type="date" [(ngModel)]="to" (change)="onCustomDateChange()" />
-        <mat-icon matPrefix>calendar_today</mat-icon>
+        <input matInput [matDatepicker]="toPicker" [(ngModel)]="to" (dateChange)="onCustomDateChange()" />
+        <mat-datepicker-toggle matPrefix [for]="toPicker">
+          <mat-icon matDatepickerToggleIcon>calendar_today</mat-icon>
+        </mat-datepicker-toggle>
+        <mat-datepicker #toPicker></mat-datepicker>
       </mat-form-field>
     </div>
 

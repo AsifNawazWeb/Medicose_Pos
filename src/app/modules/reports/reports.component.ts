@@ -9,8 +9,8 @@ export type DatePreset = 'today' | 'this_week' | 'this_month' | 'this_year' | 'c
   styleUrls: ['./reports.component.scss'],
 })
 export class ReportsComponent implements OnInit {
-  from = '';
-  to = '';
+  from: Date | null = null;
+  to: Date | null = null;
   selectedPreset: DatePreset = 'this_month';
   summary: any = null;
   isLoading = false;
@@ -129,7 +129,10 @@ export class ReportsComponent implements OnInit {
     this.selectPreset('this_month');
   }
 
-  formatDate(date: Date): string {
+  /**
+   * Convert a Date object to yyyy-MM-dd string for API calls
+   */
+  toApiDate(date: Date): string {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -141,23 +144,21 @@ export class ReportsComponent implements OnInit {
     const now = new Date();
 
     if (preset === 'today') {
-      this.from = this.formatDate(now);
-      this.to = this.formatDate(now);
+      this.from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      this.to = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     } else if (preset === 'this_week') {
       const current = new Date();
       const day = current.getDay();
       const diff = current.getDate() - day + (day === 0 ? -6 : 1); // Monday
-      const monday = new Date(current.setDate(diff));
-      this.from = this.formatDate(monday);
-      this.to = this.formatDate(new Date());
+      const monday = new Date(current.getFullYear(), current.getMonth(), diff);
+      this.from = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate());
+      this.to = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     } else if (preset === 'this_month') {
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-      this.from = this.formatDate(firstDay);
-      this.to = this.formatDate(new Date());
+      this.from = new Date(now.getFullYear(), now.getMonth(), 1);
+      this.to = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     } else if (preset === 'this_year') {
-      const firstDay = new Date(now.getFullYear(), 0, 1);
-      this.from = this.formatDate(firstDay);
-      this.to = this.formatDate(new Date());
+      this.from = new Date(now.getFullYear(), 0, 1);
+      this.to = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     }
     // 'custom' maintains current manually selected from/to dates
 
@@ -172,7 +173,7 @@ export class ReportsComponent implements OnInit {
   load() {
     if (!this.from || !this.to) return;
     this.isLoading = true;
-    const params = { from: this.from, to: this.to };
+    const params = { from: this.toApiDate(this.from), to: this.toApiDate(this.to) };
 
     // 1. Load summary metrics
     this.api.get<any>('/reports/summary', params).subscribe({
