@@ -28,6 +28,18 @@ function backup(req, res) {
   try {
     const backupPath = copyDb(config.dbPath, config.backupDir);
     const filename = path.basename(backupPath);
+
+    // Verify the backup file exists and has content before sending
+    if (!fs.existsSync(backupPath)) {
+      return res.status(500).json({ ok: false, error: { message: 'Backup file was not created' } });
+    }
+    const stat = fs.statSync(backupPath);
+    if (stat.size === 0) {
+      // Clean up empty file
+      try { fs.unlinkSync(backupPath); } catch (_) {}
+      return res.status(500).json({ ok: false, error: { message: 'Backup file is empty. The database may have no data or is locked.' } });
+    }
+
     res.download(backupPath, filename, (err) => {
       if (err) {
         console.error('Backup download error:', err);
@@ -35,10 +47,12 @@ function backup(req, res) {
           res.status(500).json({ ok: false, error: { message: 'Failed to download backup' } });
         }
       }
+      // Clean up the backup file after download (optional — keeps backup dir clean)
+      // try { fs.unlinkSync(backupPath); } catch (_) {}
     });
   } catch (err) {
     console.error('Backup creation error:', err);
-    res.status(500).json({ ok: false, error: { message: 'Failed to create backup' } });
+    res.status(500).json({ ok: false, error: { message: err.message || 'Failed to create backup' } });
   }
 }
 
