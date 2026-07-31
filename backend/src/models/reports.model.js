@@ -1,25 +1,45 @@
 const { getDb } = require('../config/db');
 
-function parseDateRange(from, to) {
+function parseDateRange(from, to, defaultMode = 'today') {
   let fromDate = from;
   let toDate = to;
 
   if (!fromDate || !toDate) {
     const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0); // default to start of month
     const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-    fromDate = fromDate || start.toISOString();
     toDate = toDate || end.toISOString();
+
+    if (defaultMode === 'all_time') {
+      fromDate = fromDate || '1970-01-01T00:00:00.000Z';
+    } else {
+      // defaultMode === 'today'
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      fromDate = fromDate || start.toISOString();
+    }
   } else {
-    if (!fromDate.includes('T')) fromDate = `${fromDate}T00:00:00.000Z`;
-    if (!toDate.includes('T')) toDate = `${toDate}T23:59:59.999Z`;
+    if (!fromDate.includes('T')) {
+      const parts = fromDate.split('-').map(Number);
+      if (parts.length === 3) {
+        fromDate = new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0).toISOString();
+      } else {
+        fromDate = `${fromDate}T00:00:00.000Z`;
+      }
+    }
+    if (!toDate.includes('T')) {
+      const parts = toDate.split('-').map(Number);
+      if (parts.length === 3) {
+        toDate = new Date(parts[0], parts[1] - 1, parts[2], 23, 59, 59, 999).toISOString();
+      } else {
+        toDate = `${toDate}T23:59:59.999Z`;
+      }
+    }
   }
   return { fromDate, toDate };
 }
 
-function summary({ from, to } = {}) {
+function summary({ from, to, defaultMode = 'today' } = {}) {
   const db = getDb();
-  const { fromDate, toDate } = parseDateRange(from, to);
+  const { fromDate, toDate } = parseDateRange(from, to, defaultMode);
 
   // 1. Total Revenue & Total Invoices in Date Range
   const salesRow = db.prepare(`

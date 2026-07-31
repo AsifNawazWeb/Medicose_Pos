@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ChartConfiguration } from 'chart.js';
 import { ApiService } from '../../core/services/api.service';
 
-export type DatePreset = 'today' | 'this_week' | 'this_month' | 'this_year' | 'custom';
+export type DatePreset = 'today' | 'this_week' | 'this_month' | 'this_year' | 'all_time' | 'custom';
 
 @Component({
   templateUrl: './reports.component.html',
@@ -11,7 +11,7 @@ export type DatePreset = 'today' | 'this_week' | 'this_month' | 'this_year' | 'c
 export class ReportsComponent implements OnInit {
   from: Date | null = null;
   to: Date | null = null;
-  selectedPreset: DatePreset = 'this_month';
+  selectedPreset: DatePreset = 'all_time';
   summary: any = null;
   isLoading = false;
 
@@ -126,7 +126,7 @@ export class ReportsComponent implements OnInit {
   constructor(private api: ApiService) {}
 
   ngOnInit() {
-    this.selectPreset('this_month');
+    this.selectPreset('all_time');
   }
 
   /**
@@ -143,7 +143,10 @@ export class ReportsComponent implements OnInit {
     this.selectedPreset = preset;
     const now = new Date();
 
-    if (preset === 'today') {
+    if (preset === 'all_time') {
+      this.from = null;
+      this.to = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    } else if (preset === 'today') {
       this.from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       this.to = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     } else if (preset === 'this_week') {
@@ -171,9 +174,10 @@ export class ReportsComponent implements OnInit {
   }
 
   load() {
-    if (!this.from || !this.to) return;
     this.isLoading = true;
-    const params = { from: this.toApiDate(this.from), to: this.toApiDate(this.to) };
+    const params: any = {};
+    if (this.from) params.from = this.toApiDate(this.from);
+    if (this.to) params.to = this.toApiDate(this.to);
 
     // 1. Load summary metrics
     this.api.get<any>('/reports/summary', params).subscribe({

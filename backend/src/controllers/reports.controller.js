@@ -3,7 +3,7 @@ const Reports = require('../models/reports.model');
 function summary(req, res) {
   const from = req.query.from ? String(req.query.from) : null;
   const to = req.query.to ? String(req.query.to) : null;
-  res.json({ ok: true, data: Reports.summary({ from, to }) });
+  res.json({ ok: true, data: Reports.summary({ from, to, defaultMode: 'all_time' }) });
 }
 
 function revenueTrend(req, res) {

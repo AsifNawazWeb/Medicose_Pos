@@ -5,6 +5,13 @@
       <button 
         type="button" 
         class="preset-btn" 
+        [class.active]="selectedPreset === 'all_time'" 
+        (click)="selectPreset('all_time')">
+        All Time
+      </button>
+      <button 
+        type="button" 
+        class="preset-btn" 
         [class.active]="selectedPreset === 'today'" 
         (click)="selectPreset('today')">
         Today
