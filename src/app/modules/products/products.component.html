@@ -199,9 +199,10 @@
 
         <mat-form-field appearance="outline" class="form-field">
           <mat-label>Category *</mat-label>
-          <mat-select formControlName="category" required>
-            <mat-option *ngFor="let c of categories" [value]="c">{{ c }}</mat-option>
-          </mat-select>
+          <input matInput [matAutocomplete]="autoCategory" [formControl]="categorySearchCtrl" required (keydown.enter)="onCategoryEnter()" #autoCategoryTrigger="matAutocompleteTrigger" />
+          <mat-autocomplete #autoCategory="matAutocomplete" [displayWith]="displayCategoryFn" (optionSelected)="onCategorySelected($event)">
+            <mat-option *ngFor="let c of filteredCategories | async" [value]="c">{{ c }}</mat-option>
+          </mat-autocomplete>
         </mat-form-field>
       </div>
 

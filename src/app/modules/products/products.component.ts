@@ -7,13 +7,20 @@ import {
   ElementRef,
   AfterViewInit,
 } from "@angular/core";
-import { FormBuilder, Validators } from "@angular/forms";
+import { FormBuilder, FormControl, Validators } from "@angular/forms";
 import { MatDialog } from "@angular/material/dialog";
+import { MatAutocompleteSelectedEvent, MatAutocompleteTrigger } from "@angular/material/autocomplete";
 import { ActivatedRoute } from "@angular/router";
 import { ApiService } from "../../core/services/api.service";
 import { ToastService } from "../../core/services/toast.service";
-import { Subject } from "rxjs";
-import { debounceTime, distinctUntilChanged, takeUntil } from "rxjs/operators";
+import { Observable, Subject } from "rxjs";
+import {
+  debounceTime,
+  distinctUntilChanged,
+  map,
+  startWith,
+  takeUntil,
+} from "rxjs/operators";
 import JsBarcode from "jsbarcode";
 
 @Component({
@@ -27,6 +34,7 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild("barcodeSvg") barcodeSvg!: ElementRef<SVGSVGElement>;
   @ViewChild("printBarcodeSvg") printBarcodeSvg!: ElementRef<SVGSVGElement>;
   @ViewChild("printFrame") printFrame!: ElementRef<HTMLIFrameElement>;
+  @ViewChild("autoCategoryTrigger") autoCategoryTrigger!: MatAutocompleteTrigger;
 
   categories = [
     "Tablet",
@@ -43,8 +51,15 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
     "Soap",
     "Jel",
     "Serum",
+    "Face wash",
+    "Lotion",
+    "Shampoo",
+    "Oil",
+    "SunBlock",
     "Other",
   ];
+  categorySearchCtrl = new FormControl("");
+  filteredCategories: Observable<string[]> = new Observable();
   categoryFilter = "";
   stockFilter = "";
   // Generate shelves A1–M100
@@ -103,6 +118,12 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
       stripsPerBox: [1, [Validators.min(1)]],
       packagingUnit: ["unit"],
     });
+
+    // Set up category autocomplete filter
+    this.filteredCategories = this.categorySearchCtrl.valueChanges.pipe(
+      startWith(""),
+      map((value) => this._filterCategories(value || "")),
+    );
   }
 
   ngOnInit() {
@@ -298,6 +319,54 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  /** Filter categories: show matches first (sorted by closest match) */
+  private _filterCategories(value: string): string[] {
+    const filterValue = value.toLowerCase().trim();
+    if (!filterValue) {
+      return this.categories.slice();
+    }
+    // Filter categories that include the typed text
+    const matches = this.categories.filter((c) =>
+      c.toLowerCase().includes(filterValue),
+    );
+    // Sort: exact match first, then starts-with, then includes
+    matches.sort((a, b) => {
+      const aLower = a.toLowerCase();
+      const bLower = b.toLowerCase();
+      const aExact = aLower === filterValue ? 0 : 1;
+      const bExact = bLower === filterValue ? 0 : 1;
+      if (aExact !== bExact) return aExact - bExact;
+      const aStarts = aLower.startsWith(filterValue) ? 0 : 1;
+      const bStarts = bLower.startsWith(filterValue) ? 0 : 1;
+      if (aStarts !== bStarts) return aStarts - bStarts;
+      return aLower.indexOf(filterValue) - bLower.indexOf(filterValue);
+    });
+    return matches;
+  }
+
+  /** Display function for the autocomplete */
+  displayCategoryFn(category: string): string {
+    return category || "";
+  }
+
+  /** When a category is selected from the autocomplete panel */
+  onCategorySelected(event: MatAutocompleteSelectedEvent) {
+    this.form.get("category")?.setValue(event.option.value);
+  }
+
+  /** When Enter is pressed: select the top matching category and close the dropdown */
+  onCategoryEnter() {
+    const value = this.categorySearchCtrl.value || "";
+    const matches = this._filterCategories(value);
+    if (matches.length > 0) {
+      const topMatch = matches[0];
+      this.form.get("category")?.setValue(topMatch);
+      this.categorySearchCtrl.setValue(topMatch);
+    }
+    // Close the autocomplete panel
+    this.autoCategoryTrigger?.closePanel();
+  }
+
   openModal(row?: any) {
     this.editing = row ?? null;
     if (row) {
@@ -317,6 +386,8 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
         stripsPerBox: row.stripsPerBox || 1,
         packagingUnit: row.packagingUnit || "unit",
       });
+      // Sync the search control with the current category
+      this.categorySearchCtrl.setValue(row.category || "Tablet");
     } else {
       // Generate a new barcode for new products
       const newBarcode = this.generateEAN13Barcode();
@@ -340,6 +411,8 @@ export class ProductsComponent implements OnInit, OnDestroy, AfterViewInit {
         stripsPerBox: 1,
         packagingUnit: "unit",
       });
+      // Reset the search control to show all categories
+      this.categorySearchCtrl.setValue("");
     }
     const dialogRef = this.dialog.open(this.productDialog, {
       width: "720px",
