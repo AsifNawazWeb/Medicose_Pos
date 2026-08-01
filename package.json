@@ -11,6 +11,7 @@
   },
   "scripts": {
     "postinstall": "npm rebuild better-sqlite3",
+    "copy-fonts": "node scripts/copy-fonts.js",
     "init-db": "node backend/scripts/init-db.js",
     "create-user": "node scripts/create-user.js",
     "dev:renderer": "ng serve renderer --host 0.0.0.0 --port 4200",
@@ -18,7 +19,7 @@
     "dev:electron": "wait-on http://localhost:4200 && cross-env NODE_ENV=development electron . --no-sandbox",
     "dev": "concurrently -k -n \"SERVER,ANGULAR,ELECTRON\" -c \"cyan,green,magenta\" \"npm:dev:server\" \"npm:dev:renderer\" \"npm:dev:electron\"",
     "server": "node backend/src/server.js",
-    "build": "ng build renderer --configuration production --base-href ./",
+    "build": "npm run copy-fonts && ng build renderer --configuration production --base-href ./",
     "start": "node scripts/start-electron.js",
     "build-win": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -w --x64",
     "build-linux": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -l --x64",
@@ -36,6 +37,7 @@
     "@angular/platform-browser": "^17.3.0",
     "@angular/platform-browser-dynamic": "^17.3.0",
     "@angular/router": "^17.3.0",
+    "@fontsource/roboto": "^5.3.0",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^9.4.3",
     "bootstrap": "^5.3.8",
@@ -49,6 +51,7 @@
     "helmet": "^7.1.0",
     "jsbarcode": "^3.12.3",
     "jsonwebtoken": "^9.0.2",
+    "material-icons": "^1.13.14",
     "multer": "^2.2.0",
     "nanoid": "^3.3.4",
     "ng2-charts": "^5.0.4",
@@ -78,13 +81,11 @@
     "productName": "Medical POS",
     "asar": false,
     "npmRebuild": true,
-    "publish": [
-      {
-        "provider": "AsifTech",
-        "owner": "AsifNawazWeb",
-        "repo": "Medicose_Pos"
-      }
-    ],
+    "publish": {
+      "provider": "github",
+      "owner": "AsifNawazWeb",
+      "repo": "Medicose_Pos"
+    },
     "files": [
       "dist/renderer/browser/**/*",
       "electron/**/*",
@@ -104,8 +105,7 @@
       "target": [
         "nsis"
       ],
-      "signingHashAlgorithms": null,
-      "sign": null
+      "forceCodeSigning": false
     },
     "nsis": {
       "oneClick": false,

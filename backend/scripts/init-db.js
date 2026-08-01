@@ -89,74 +89,74 @@ function run() {
   // ── Demo product seeding REMOVED for clean customer delivery ──
   // To re-enable demo products for testing, uncomment the block below.
 
-  const hasAnyProducts =
-    db.prepare("SELECT COUNT(*) AS c FROM products").get().c > 0;
-  if (!hasAnyProducts) {
-    const supInfo = db
-      .prepare(
-        `
-      INSERT INTO suppliers (name, phone, email, address, notes, createdAt, updatedAt)
-      VALUES ('Default Supplier', '', '', '', 'Seed supplier', ?, ?)
-    `,
-      )
-      .run(now, now);
+  // const hasAnyProducts =
+  //   db.prepare("SELECT COUNT(*) AS c FROM products").get().c > 0;
+  // if (!hasAnyProducts) {
+  //   const supInfo = db
+  //     .prepare(
+  //       `
+  //     INSERT INTO suppliers (name, phone, email, address, notes, createdAt, updatedAt)
+  //     VALUES ('Default Supplier', '', '', '', 'Seed supplier', ?, ?)
+  //   `,
+  //     )
+  //     .run(now, now);
 
-    const supplierId = supInfo.lastInsertRowid;
+  //   const supplierId = supInfo.lastInsertRowid;
 
-    const stmt = db.prepare(`
-      INSERT INTO products (name, sku, barcode, category, batchNo, unit, price, cost, gstRate, stockQty, reorderLevel, expiryDate, supplierId, isActive, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, 'pcs', ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
-    `);
+  //   const stmt = db.prepare(`
+  //     INSERT INTO products (name, sku, barcode, category, batchNo, unit, price, cost, gstRate, stockQty, reorderLevel, expiryDate, supplierId, isActive, createdAt, updatedAt)
+  //     VALUES (?, ?, ?, ?, ?, 'pcs', ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+  //   `);
 
-    stmt.run(
-      "Paracetamol 500mg",
-      "MED-001",
-      "890000000001",
-      "Tablet",
-      "B-0001",
-      30,
-      20,
-      0,
-      100,
-      20,
-      null,
-      supplierId,
-      now,
-      now,
-    );
-    stmt.run(
-      "Cough Syrup 100ml",
-      "MED-002",
-      "890000000002",
-      "Syrup",
-      "B-0002",
-      120,
-      90,
-      0,
-      50,
-      10,
-      null,
-      supplierId,
-      now,
-      now,
-    );
-    stmt.run(
-      "Vitamin C 1000mg",
-      "MED-003",
-      "890000000003",
-      "Tablet",
-      "B-0003",
-      250,
-      180,
-      0,
-      40,
-      10,
-      null,
-      supplierId,
-      now,
-      now,
-    );
-  }
+  //   stmt.run(
+  //     "Paracetamol 500mg",
+  //     "MED-001",
+  //     "890000000001",
+  //     "Tablet",
+  //     "B-0001",
+  //     30,
+  //     20,
+  //     0,
+  //     100,
+  //     20,
+  //     null,
+  //     supplierId,
+  //     now,
+  //     now,
+  //   );
+  //   stmt.run(
+  //     "Cough Syrup 100ml",
+  //     "MED-002",
+  //     "890000000002",
+  //     "Syrup",
+  //     "B-0002",
+  //     120,
+  //     90,
+  //     0,
+  //     50,
+  //     10,
+  //     null,
+  //     supplierId,
+  //     now,
+  //     now,
+  //   );
+  //   stmt.run(
+  //     "Vitamin C 1000mg",
+  //     "MED-003",
+  //     "890000000003",
+  //     "Tablet",
+  //     "B-0003",
+  //     250,
+  //     180,
+  //     0,
+  //     40,
+  //     10,
+  //     null,
+  //     supplierId,
+  //     now,
+  //     now,
+  //   );
+  // }
 
   db.close();
   console.log("✅ Database initialized at:", DB_PATH);
