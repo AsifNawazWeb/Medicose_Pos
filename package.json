@@ -105,11 +105,14 @@
       "target": [
         "nsis"
       ],
-      "forceCodeSigning": false
+      "forceCodeSigning": false,
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
     },
     "linux": {
       "target": [
