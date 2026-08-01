@@ -11,6 +11,24 @@
       <mat-icon>receipt_long</mat-icon>
       Transaction History
     </mat-card-title>
+    <div class="header-actions">
+      <button mat-raised-button color="warn" (click)="toggleDeleteMode()" *ngIf="!isDeleteMode">
+        <mat-icon>delete_sweep</mat-icon>
+        Delete Sales
+      </button>
+      <ng-container *ngIf="isDeleteMode">
+        <mat-checkbox [checked]="allSelected" (change)="toggleSelectAll()" class="select-all-checkbox">
+          Select All
+        </mat-checkbox>
+        <button mat-raised-button color="warn" (click)="openDeleteDialog()" [disabled]="selectedCount === 0">
+          <mat-icon>delete</mat-icon>
+          Delete ({{ selectedCount }})
+        </button>
+        <button mat-stroked-button (click)="toggleDeleteMode()">
+          Cancel
+        </button>
+      </ng-container>
+    </div>
   </mat-card-header>
   <mat-card-content>
     <!-- Filters Section -->
@@ -51,6 +69,16 @@
     <!-- Sales Table -->
     <div class="sales-table-wrapper" *ngIf="filteredRows.length > 0; else noSales">
       <table mat-table [dataSource]="filteredRows" class="sales-table mat-elevation-z0">
+
+        <!-- Selection Column (delete mode only) -->
+        <ng-container matColumnDef="select">
+          <th mat-header-cell *matHeaderCellDef class="select-col">
+            <mat-checkbox [checked]="allSelected" (change)="toggleSelectAll()"></mat-checkbox>
+          </th>
+          <td mat-cell *matCellDef="let row" class="select-col" (click)="$event.stopPropagation()">
+            <mat-checkbox [checked]="isRowSelected(row)" (change)="toggleRowSelection(row, $event)"></mat-checkbox>
+          </td>
+        </ng-container>
 
         <!-- Bill Number Column -->
         <ng-container matColumnDef="billNo">
@@ -124,8 +152,10 @@
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;" [class.selected-row]="selected?.id === row.id"
-          (click)="open(row)">
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+          [class.selected-row]="selected?.id === row.id"
+          [class.delete-selected-row]="isDeleteMode && isRowSelected(row)"
+          (click)="isDeleteMode ? null : open(row)">
         </tr>
       </table>
     </div>
@@ -321,6 +351,33 @@
     <button mat-stroked-button mat-dialog-close>Cancel</button>
     <button mat-raised-button color="primary" (click)="saveEdit()">
       <mat-icon>save</mat-icon> Save Changes
+    </button>
+  </mat-dialog-actions>
+</ng-template>
+
+<!-- ─── Delete Confirmation Dialog ───────────────────────────────────────── -->
+<ng-template #deleteDialog>
+  <h2 mat-dialog-title>
+    <mat-icon style="vertical-align:middle;margin-right:6px;color:#d32f2f">delete_sweep</mat-icon>
+    Delete {{ selectedCount }} Transaction{{ selectedCount > 1 ? 's' : '' }}?
+  </h2>
+  <mat-dialog-content style="min-width:400px">
+    <p class="delete-warning">
+      <mat-icon style="font-size:16px;vertical-align:middle">warning</mat-icon>
+      This will permanently remove the selected sale record{{ selectedCount > 1 ? 's' : '' }} and their reports.
+    </p>
+    <mat-checkbox [(ngModel)]="restoreStockOnDelete" class="restore-stock-checkbox">
+      Restore product stock to inventory
+    </mat-checkbox>
+    <p class="delete-hint">
+      Check to add the sold items back to stock. Uncheck to only remove the sale records and their reports.
+      Customer balances and ledger entries will be updated accordingly.
+    </p>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-stroked-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="warn" (click)="confirmDelete()">
+      <mat-icon>delete</mat-icon> Delete
     </button>
   </mat-dialog-actions>
 </ng-template>

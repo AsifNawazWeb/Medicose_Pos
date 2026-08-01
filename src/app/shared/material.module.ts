@@ -24,6 +24,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 export const DD_MM_YYYY_FORMATS = {
   parse: {
@@ -66,7 +67,8 @@ export const DD_MM_YYYY_FORMATS = {
     MatProgressBarModule,
     MatDividerModule,
     MatAutocompleteModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatCheckboxModule
   ],
 })
 export class MaterialModule {}

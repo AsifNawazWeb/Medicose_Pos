@@ -101,4 +101,32 @@ function recordPayment(req, res) {
   }
 }
 
-module.exports = { list, get, create, edit, getLedger, recordPayment };
+// ── Bulk delete with optional stock restore ─────────────────────────────────
+function removeBatch(req, res) {
+  try {
+    const { ids, restoreStock = false } = req.body || {};
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(422).json({ ok: false, message: 'ids array is required' });
+    }
+    const data = Sales.removeBatch(ids, { restoreStock: !!restoreStock });
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(400).json({ ok: false, message: err.message });
+  }
+}
+
+// ── Restore deleted sales from a snapshot (UNDO) ────────────────────────────
+function restoreBatch(req, res) {
+  try {
+    const { snapshot } = req.body || {};
+    if (!snapshot) {
+      return res.status(422).json({ ok: false, message: 'snapshot is required' });
+    }
+    const data = Sales.restoreBatch(snapshot);
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(400).json({ ok: false, message: err.message });
+  }
+}
+
+module.exports = { list, get, create, edit, getLedger, recordPayment, removeBatch, restoreBatch };

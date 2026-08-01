@@ -8,5 +8,7 @@ router.post('/',                             auth(true), Ctrl.create);
 router.put('/:id',                           auth(true), Ctrl.edit);          // NEW: edit bill
 router.get('/ledger/:customerId',            auth(true), Ctrl.getLedger);     // NEW: customer ledger
 router.post('/payment/:customerId',          auth(true), Ctrl.recordPayment); // NEW: record payment
+router.post('/delete-batch',                 auth(true), Ctrl.removeBatch);   // NEW: bulk delete
+router.post('/restore-batch',                auth(true), Ctrl.restoreBatch);  // NEW: undo delete
 
 module.exports = router;

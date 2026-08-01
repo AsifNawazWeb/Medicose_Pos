@@ -481,10 +481,178 @@ function recordPayment({ customerId, amount, note = '' }) {
   })();
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// BULK DELETE + RESTORE (with UNDO snapshot)
+// ─────────────────────────────────────────────────────────────────────────────
+function removeBatch(saleIds, { restoreStock = false } = {}) {
+  const db = getDb();
+  const ids = (Array.isArray(saleIds) ? saleIds : [saleIds])
+    .map(toIdOrNull)
+    .filter(Boolean);
+  if (ids.length === 0) throw new Error('No sale ids provided');
+
+  const { hasBalance, hasLedger } = getSchemaInfo(db);
+
+  return db.transaction(() => {
+    const now = new Date().toISOString();
+    const deleted = [];
+    const blocked = [];
+    const snapshot = { restoreStock: !!restoreStock, sales: [] };
+
+    for (const id of ids) {
+      const sale = getById(id);
+      if (!sale) { blocked.push({ id, reason: 'Sale not found' }); continue; }
+      if (sale.status === 'VOIDED') { blocked.push({ id, invoiceNo: sale.invoiceNo, reason: 'Sale is already voided' }); continue; }
+
+      // Block if the sale has returns (FK constraint — returns.saleId has no cascade)
+      const ret = db.prepare('SELECT COUNT(*) AS c FROM returns WHERE saleId = ?').get(id);
+      if (ret && ret.c > 0) {
+        blocked.push({ id, invoiceNo: sale.invoiceNo, reason: 'Sale has returns and cannot be deleted' });
+        continue;
+      }
+
+      // Capture snapshot for UNDO
+      const saleItems = db.prepare('SELECT * FROM sale_items WHERE saleId = ?').all(id);
+      const ledgerEntries = hasLedger
+        ? db.prepare('SELECT * FROM customer_ledger WHERE billId = ?').all(id)
+        : [];
+      snapshot.sales.push({
+        sale,
+        items: saleItems,
+        ledger: ledgerEntries,
+        customerId: sale.customerId || null,
+        balanceDue: Number(sale.balanceDue || 0),
+      });
+
+      // 1. Restore stock if requested
+      if (restoreStock) {
+        for (const it of saleItems) {
+          db.prepare('UPDATE products SET stockQty = stockQty + ?, updatedAt = ? WHERE id = ?')
+            .run(it.qty, now, it.productId);
+        }
+      }
+
+      // 2. Adjust customer balance (subtract balanceDue, clamped at 0)
+      if (sale.customerId && hasBalance) {
+        const cust = db.prepare('SELECT balance FROM customers WHERE id = ?').get(sale.customerId);
+        if (cust) {
+          const newBal = Math.max(0, Number(cust.balance || 0) - Number(sale.balanceDue || 0));
+          db.prepare('UPDATE customers SET balance = ?, updatedAt = ? WHERE id = ?')
+            .run(newBal, now, sale.customerId);
+        }
+      }
+
+      // 3. Delete ledger entries tied to this bill
+      if (hasLedger) {
+        db.prepare('DELETE FROM customer_ledger WHERE billId = ?').run(id);
+      }
+
+      // 4. Delete the sale (cascades to sale_items)
+      db.prepare('DELETE FROM sales WHERE id = ?').run(id);
+
+      deleted.push({ id, invoiceNo: sale.invoiceNo });
+    }
+
+    return { deleted, blocked, snapshot };
+  })();
+}
+
+function restoreBatch(snapshot) {
+  const db = getDb();
+  if (!snapshot || !Array.isArray(snapshot.sales)) throw new Error('Invalid snapshot');
+  const restoreStock = !!snapshot.restoreStock;
+  const { hasNewSaleCols, hasBalance, hasLedger } = getSchemaInfo(db);
+
+  return db.transaction(() => {
+    const now = new Date().toISOString();
+    const restored = [];
+
+    for (const rec of snapshot.sales) {
+      const sale = rec.sale;
+      if (!sale) continue;
+      const saleId = sale.id;
+
+      // Re-insert the sale with its original ID
+      if (hasNewSaleCols) {
+        db.prepare(`
+          INSERT INTO sales
+            (id, invoiceNo, userId, customerId, paymentMethod, subTotal, gstTotal,
+             discount, billDiscount, grandTotal, amountPaid, balanceDue, prevBalance,
+             status, createdAt, updatedAt, totalItems)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        `).run(
+          saleId, sale.invoiceNo, sale.userId, sale.customerId, sale.paymentMethod,
+          sale.subTotal, sale.gstTotal, sale.discount, sale.billDiscount, sale.grandTotal,
+          sale.amountPaid, sale.balanceDue, sale.prevBalance,
+          sale.status, sale.createdAt, sale.updatedAt, sale.totalItems
+        );
+      } else {
+        db.prepare(`
+          INSERT INTO sales
+            (id, invoiceNo, userId, customerId, paymentMethod, subTotal, gstTotal,
+             discount, grandTotal, status, createdAt, updatedAt, totalItems)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+        `).run(
+          saleId, sale.invoiceNo, sale.userId, sale.customerId, sale.paymentMethod,
+          sale.subTotal, sale.gstTotal, sale.discount, sale.grandTotal,
+          sale.status, sale.createdAt, sale.updatedAt, sale.totalItems
+        );
+      }
+
+      // Re-insert sale items with original IDs
+      for (const it of rec.items || []) {
+        db.prepare(`
+          INSERT INTO sale_items
+            (id, saleId, productId, qty, price, costPrice, productDiscount, discountAmount,
+             extraDiscount, extraDiscountAmount, gstRate, gstAmount, lineTotal, packagingUnit)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        `).run(
+          it.id, saleId, it.productId, it.qty, it.price, it.costPrice,
+          it.productDiscount, it.discountAmount, it.extraDiscount, it.extraDiscountAmount,
+          it.gstRate, it.gstAmount, it.lineTotal, it.packagingUnit
+        );
+      }
+
+      // Reverse stock changes (if stock was restored on delete, re-deduct)
+      if (restoreStock) {
+        for (const it of rec.items || []) {
+          db.prepare('UPDATE products SET stockQty = stockQty - ?, updatedAt = ? WHERE id = ?')
+            .run(it.qty, now, it.productId);
+        }
+      }
+
+      // Re-adjust customer balance (re-add balanceDue)
+      if (rec.customerId && hasBalance) {
+        const cust = db.prepare('SELECT balance FROM customers WHERE id = ?').get(rec.customerId);
+        if (cust) {
+          const newBal = Math.max(0, Number(cust.balance || 0) + Number(rec.balanceDue || 0));
+          db.prepare('UPDATE customers SET balance = ?, updatedAt = ? WHERE id = ?')
+            .run(newBal, now, rec.customerId);
+        }
+      }
+
+      // Re-insert ledger entries with original IDs
+      if (hasLedger) {
+        for (const l of rec.ledger || []) {
+          db.prepare(`
+            INSERT INTO customer_ledger
+              (id, customerId, billId, type, debit, credit, balance, note, createdAt)
+            VALUES (?,?,?,?,?,?,?,?,?)
+          `).run(l.id, l.customerId, l.billId, l.type, l.debit, l.credit, l.balance, l.note, l.createdAt);
+        }
+      }
+
+      restored.push({ id: saleId, invoiceNo: sale.invoiceNo });
+    }
+
+    return { restored };
+  })();
+}
+
 function day(iso) {
   const d = new Date(iso);
   const pad = n => String(n).padStart(2, '0');
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
 }
 
-module.exports = { list, getById, create, edit, getByCustomerId, getCustomerLedger, recordPayment };
+module.exports = { list, getById, create, edit, getByCustomerId, getCustomerLedger, recordPayment, removeBatch, restoreBatch };

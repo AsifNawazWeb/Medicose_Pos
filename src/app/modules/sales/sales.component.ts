@@ -1,5 +1,6 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { FormControl } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ReceiptService } from '../../core/services/receipt.service';
@@ -14,6 +15,7 @@ export class SalesComponent implements OnInit {
   @ViewChild('editDialog')     editDialog!:     TemplateRef<any>;
   @ViewChild('whatsappDialog') whatsappDialog!: TemplateRef<any>;
   @ViewChild('ledgerDialog')   ledgerDialog!:   TemplateRef<any>;
+  @ViewChild('deleteDialog')   deleteDialog!:   TemplateRef<any>;
 
   rows: any[]         = [];
   filteredRows: any[] = [];
@@ -26,7 +28,10 @@ export class SalesComponent implements OnInit {
   to:   any = Date;
   paymentFilter = '';
 
-  displayedColumns = ['billNo','dateTime','customer','items','amount','payment','actions'];
+  baseColumns = ['billNo','dateTime','customer','items','amount','payment','actions'];
+  get displayedColumns() {
+    return this.isDeleteMode ? ['select', ...this.baseColumns] : this.baseColumns;
+  }
 
   // ── Edit-bill state ───────────────────────────────────────────────────────
   editItems: any[]     = [];
@@ -37,11 +42,19 @@ export class SalesComponent implements OnInit {
   // ── Ledger ───────────────────────────────────────────────────────────────
   ledgerData: any = null;
 
+  // ── Bulk delete / selection state ────────────────────────────────────────
+  isDeleteMode = false;
+  selectedSaleIds: number[] = [];
+  restoreStockOnDelete = false;
+  deleteSnapshot: any = null;
+  private undoSnapshots: any[] = [];
+
   constructor(
     private api: ApiService,
     private receipt: ReceiptService,
     private toast: ToastService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private snack: MatSnackBar
   ) { this.pickCurrentWeek(); }
 
   pickCurrentWeek() {
@@ -184,6 +197,86 @@ export class SalesComponent implements OnInit {
   }
 
   getPaymentClass(m: string) { return `payment-${(m||'CASH').toLowerCase()}`; }
+
+  // ── Bulk Delete / Selection ──────────────────────────────────────────────
+  get selectedCount() { return this.selectedSaleIds.length; }
+
+  get allSelected() {
+    return this.filteredRows.length > 0 && this.filteredRows.every(r => this.selectedSaleIds.includes(r.id));
+  }
+
+  toggleDeleteMode() {
+    this.isDeleteMode = !this.isDeleteMode;
+    if (!this.isDeleteMode) this.selectedSaleIds = [];
+  }
+
+  toggleSelectAll() {
+    if (this.allSelected) {
+      this.selectedSaleIds = [];
+    } else {
+      this.selectedSaleIds = this.filteredRows.map(r => r.id);
+    }
+  }
+
+  toggleRowSelection(row: any, event: any) {
+    if (event.checked) {
+      if (!this.selectedSaleIds.includes(row.id)) {
+        this.selectedSaleIds = [...this.selectedSaleIds, row.id];
+      }
+    } else {
+      this.selectedSaleIds = this.selectedSaleIds.filter(id => id !== row.id);
+    }
+  }
+
+  isRowSelected(row: any) { return this.selectedSaleIds.includes(row.id); }
+
+  openDeleteDialog() {
+    if (this.selectedCount === 0) { this.toast.warning('Select at least one transaction to delete'); return; }
+    this.restoreStockOnDelete = false;
+    this.dialog.open(this.deleteDialog, { width: '480px', maxWidth: '95vw' });
+  }
+
+  confirmDelete() {
+    const ids = this.selectedSaleIds;
+    this.api.post<any>('/sales/delete-batch', { ids, restoreStock: this.restoreStockOnDelete }).subscribe({
+      next: r => {
+        const data = r.data || {};
+        const deletedCount = (data.deleted || []).length;
+        const blockedCount = (data.blocked || []).length;
+        this.dialog.closeAll();
+
+        if (deletedCount > 0) {
+          // Keep snapshot for UNDO
+          this.undoSnapshots.push(data.snapshot);
+          this.load();
+          this.isDeleteMode = false;
+          this.selectedSaleIds = [];
+
+          // Show snackbar with UNDO action
+          const msg = `Deleted ${deletedCount} transaction${deletedCount > 1 ? 's' : ''}`;
+          const sb = this.snack.open(msg, 'UNDO', { duration: 8000, horizontalPosition: 'right', verticalPosition: 'bottom', panelClass: ['toast-info'] });
+          sb.onAction().subscribe(() => this.undoDelete());
+        }
+
+        if (blockedCount > 0) {
+          this.toast.warning(`${blockedCount} transaction${blockedCount > 1 ? 's' : ''} skipped (have returns or already voided)`);
+        }
+      },
+      error: err => this.toast.error(err?.error?.message || 'Failed to delete transactions'),
+    });
+  }
+
+  undoDelete() {
+    const snapshot = this.undoSnapshots.pop();
+    if (!snapshot) return;
+    this.api.post<any>('/sales/restore-batch', { snapshot }).subscribe({
+      next: () => {
+        this.toast.success('Transactions restored');
+        this.load();
+      },
+      error: err => this.toast.error(err?.error?.message || 'Failed to restore transactions'),
+    });
+  }
 
   // ── WhatsApp ──────────────────────────────────────────────────────────────
   openWhatsappDialog() {
