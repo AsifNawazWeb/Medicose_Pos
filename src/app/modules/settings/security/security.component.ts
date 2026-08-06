@@ -15,7 +15,7 @@ export class SecurityComponent {
 
   constructor(private fb: FormBuilder, private api: ApiService, private toast: ToastService) {
     this.form = this.fb.group({
-    oldPassword: ['', [Validators.required, Validators.minLength(6)]],
+    currentPassword: ['', [Validators.required, Validators.minLength(6)]],
     newPassword: ['', [Validators.required, Validators.minLength(8)]],
   });
   }
@@ -26,7 +26,7 @@ export class SecurityComponent {
     this.api.post<any>('/auth/change-password', this.form.value).subscribe({
       next: () => {
         this.toast.success('Password updated');
-        this.form.reset({ oldPassword: '', newPassword: '' });
+        this.form.reset({ currentPassword: '', newPassword: '' });
       },
       error: () => (this.loading = false),
       complete: () => (this.loading = false),

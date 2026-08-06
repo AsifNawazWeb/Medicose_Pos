@@ -2,15 +2,15 @@
   <mat-card class="card surface" role="region" aria-label="Login form">
     <mat-card-header>
       <mat-card-title>Welcome back</mat-card-title>
-      <mat-card-subtitle>Sign in to continue</mat-card-subtitle>
+      <mat-card-subtitle>Sign in with your email or username</mat-card-subtitle>
     </mat-card-header>
 
     <mat-card-content>
       <form [formGroup]="form" (ngSubmit)="submit()">
         <mat-form-field appearance="outline" class="full">
-          <mat-label>Email</mat-label>
-          <input matInput formControlName="email" autocomplete="username" placeholder="name@example.com" required />
-          <mat-error *ngIf="form.controls.email.invalid">Enter a valid email</mat-error>
+          <mat-label>Email or Username</mat-label>
+          <input matInput formControlName="login" autocomplete="username" placeholder="name@example.com or username" required />
+          <mat-error *ngIf="form.controls.login.invalid">Enter your email or username</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full">
@@ -27,10 +27,6 @@
           <span>Sign in</span>
         </button>
       </form>
-
-      <div class="row">
-        <a routerLink="/auth/register">Create account</a>
-      </div>
     </mat-card-content>
   </mat-card>
 </div>

@@ -1,8 +1,9 @@
 const router = require('express').Router();
 const Ctrl = require('../controllers/dashboard.controller');
-const { auth } = require('../middlewares/auth.middleware');
+const { auth, requireRole } = require('../middlewares/auth.middleware');
 
-router.get('/stats', auth(true), Ctrl.stats);
-router.get('/top-products', auth(true), Ctrl.topProducts);
+// Dashboard — admin, manager, viewer (cashier has no access)
+router.get('/stats', auth(true), requireRole('admin', 'manager', 'viewer'), Ctrl.stats);
+router.get('/top-products', auth(true), requireRole('admin', 'manager', 'viewer'), Ctrl.topProducts);
 
 module.exports = router;

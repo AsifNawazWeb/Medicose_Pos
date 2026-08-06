@@ -1,0 +1,93 @@
+<app-page-header title="User Management" subtitle="Create and manage user accounts and roles">
+  <button mat-raised-button color="primary" (click)="openCreateDialog()">
+    <mat-icon>person_add</mat-icon>Add User
+  </button>
+</app-page-header>
+
+<mat-card class="surface panel">
+  <mat-card-content>
+    <div class="table-wrap" *ngIf="!loading; else loadingTpl">
+      <table mat-table [dataSource]="users" class="users-table">
+        <!-- Name Column -->
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Name</th>
+          <td mat-cell *matCellDef="let user">
+            <div class="user-cell">
+              <mat-icon class="avatar">account_circle</mat-icon>
+              <div>
+                <div class="user-name">{{ user.name }}</div>
+                <div class="user-username">&#64;{{ user.username }}</div>
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Email Column -->
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef>Email</th>
+          <td mat-cell *matCellDef="let user">{{ user.email }}</td>
+        </ng-container>
+
+        <!-- Role Column -->
+        <ng-container matColumnDef="role">
+          <th mat-header-cell *matHeaderCellDef>Role</th>
+          <td mat-cell *matCellDef="let user">
+            <span class="role-badge" [ngClass]="'role-' + user.role">
+              {{ getRoleLabel(user.role) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let user">
+            <span class="status-badge" [ngClass]="user.isActive ? 'active' : 'inactive'">
+              {{ user.isActive ? 'Active' : 'Disabled' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Last Login Column -->
+        <ng-container matColumnDef="lastLogin">
+          <th mat-header-cell *matHeaderCellDef>Last Login</th>
+          <td mat-cell *matCellDef="let user">{{ formatDate(user.lastLoginAt) }}</td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let user" class="actions-cell">
+            <button mat-icon-button matTooltip="Edit" (click)="openEditDialog(user)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button matTooltip="Reset Password" (click)="openResetPasswordDialog(user)">
+              <mat-icon>lock_reset</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              [matTooltip]="user.isActive ? 'Disable' : 'Enable'"
+              [color]="user.isActive ? 'warn' : 'primary'"
+              (click)="toggleActive(user)"
+              [disabled]="user.id === currentUserId"
+            >
+              <mat-icon>{{ user.isActive ? 'block' : 'check_circle' }}</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <div *ngIf="users.length === 0" class="empty">
+        <mat-icon>people_outline</mat-icon>
+        <p>No users found. Click "Add User" to create one.</p>
+      </div>
+    </div>
+
+    <ng-template #loadingTpl>
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    </ng-template>
+  </mat-card-content>
+</mat-card>

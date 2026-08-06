@@ -1,11 +1,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { LoginComponent } from './login/login.component';
-import { RegisterComponent } from './register/register.component';
+import { SetupComponent } from './setup/setup.component';
+import { setupGuard } from '../../core/guards/setup.guard';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
-  { path: 'register', component: RegisterComponent },
+  { path: 'setup', component: SetupComponent, canActivate: [setupGuard] },
   { path: '', redirectTo: 'login', pathMatch: 'full' },
 ];
 

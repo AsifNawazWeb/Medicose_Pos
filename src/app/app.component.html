@@ -1,7 +1,7 @@
 <a class="skip-link" href="#main">Skip to content</a>
 
 <mat-sidenav-container class="shell">
-  <mat-sidenav #snav class="side" mode="side" opened>
+  <mat-sidenav #snav class="side" mode="side" opened *ngIf="!isAuthPage">
     <!-- Brand Header -->
     <div class="brand">
       <div>
@@ -12,11 +12,11 @@
 
     <!-- Main Navigation -->
     <mat-nav-list aria-label="Primary navigation">
-      <a mat-list-item routerLink="/dashboard" routerLinkActive="active" class="slide-in">
+      <a *ngIf="auth.hasRole('admin', 'manager', 'viewer')" mat-list-item routerLink="/dashboard" routerLinkActive="active" class="slide-in">
         <mat-icon>dashboard</mat-icon>
         <span>Dashboard</span>
       </a>
-      <a mat-list-item routerLink="/pos" routerLinkActive="active" class="slide-in">
+      <a *ngIf="auth.hasRole('admin', 'manager', 'cashier')" mat-list-item routerLink="/pos" routerLinkActive="active" class="slide-in">
         <mat-icon>point_of_sale</mat-icon>
         <span>New Bill / POS</span>
       </a>
@@ -28,7 +28,7 @@
         <mat-icon>receipt_long</mat-icon>
         <span>Sales History</span>
       </a>
-      <a mat-list-item routerLink="/suppliers" routerLinkActive="active" class="slide-in">
+      <a *ngIf="auth.hasRole('admin', 'manager')" mat-list-item routerLink="/suppliers" routerLinkActive="active" class="slide-in">
         <mat-icon>local_shipping</mat-icon>
         <span>Suppliers</span>
       </a>
@@ -36,19 +36,15 @@
         <mat-icon>people</mat-icon>
         <span>Customers</span>
       </a>
-      <a mat-list-item routerLink="/purchase-orders" routerLinkActive="active" class="slide-in">
+      <a *ngIf="auth.hasRole('admin', 'manager')" mat-list-item routerLink="/purchase-orders" routerLinkActive="active" class="slide-in">
         <mat-icon>shopping_cart</mat-icon>
         <span>Purchase Orders</span>
       </a>
-      <!-- <a mat-list-item routerLink="/returns" routerLinkActive="active" class="slide-in">
-        <mat-icon>undo</mat-icon>
-        <span>Returns</span>
-      </a> -->
-      <a mat-list-item routerLink="/reports" routerLinkActive="active" class="slide-in">
+      <a *ngIf="auth.hasRole('admin', 'manager', 'viewer')" mat-list-item routerLink="/reports" routerLinkActive="active" class="slide-in">
         <mat-icon>analytics</mat-icon>
         <span>Reports</span>
       </a>
-      <a mat-list-item routerLink="/settings" routerLinkActive="active" class="slide-in">
+      <a *ngIf="auth.hasRole('admin')" mat-list-item routerLink="/settings" routerLinkActive="active" class="slide-in">
         <mat-icon>settings</mat-icon>
         <span>Settings</span>
       </a>
@@ -63,7 +59,7 @@
 
   <mat-sidenav-content class="content">
     <!-- Top Toolbar -->
-    <mat-toolbar class="top" role="banner">
+    <mat-toolbar class="top" role="banner" *ngIf="!isAuthPage">
       <span class="spacer"></span>
 
       <!-- Store Info -->

@@ -1,7 +1,18 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, map } from 'rxjs';
 
-export type User = { id: number; email: string; name: string; role: 'admin' | 'cashier' };
+export type Role = 'admin' | 'manager' | 'cashier' | 'viewer';
+
+export interface User {
+  id: number;
+  email: string;
+  username: string;
+  name: string;
+  role: Role;
+  phone?: string;
+  mustChangePassword?: boolean;
+  isActive?: boolean;
+}
 
 declare global {
   interface Window {
@@ -41,11 +52,23 @@ export class AuthService {
     return localStorage.getItem(this.tokenKey);
   }
 
+  get currentUser(): User | null {
+    return this._user$.getValue();
+  }
+
   setSession(token: string, user: User) {
     localStorage.setItem(this.tokenKey, token);
     localStorage.setItem(this.userKey, JSON.stringify(user));
     this._user$.next(user);
     this._isLoggedIn$.next(true);
+  }
+
+  updateUser(user: Partial<User>) {
+    const current = this.currentUser;
+    if (!current) return;
+    const updated = { ...current, ...user };
+    localStorage.setItem(this.userKey, JSON.stringify(updated));
+    this._user$.next(updated);
   }
 
   logout() {
@@ -64,7 +87,14 @@ export class AuthService {
     }
   }
 
-  hasRole(...roles: User['role'][]) {
+  /** Sync check — returns true if current user has any of the given roles */
+  hasRole(...roles: Role[]): boolean {
+    const user = this.currentUser;
+    return !!user && roles.includes(user.role);
+  }
+
+  /** Observable version of hasRole */
+  hasRole$(...roles: Role[]) {
     return this.user$.pipe(map(u => !!u && roles.includes(u.role)));
   }
 }

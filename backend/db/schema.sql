@@ -3,11 +3,19 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   email TEXT NOT NULL UNIQUE,
+  username TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('admin','cashier')),
+  role TEXT NOT NULL DEFAULT 'cashier'
+       CHECK (role IN ('admin','manager','cashier','viewer')),
   passwordHash TEXT NOT NULL,
+  phone TEXT,
+  isActive INTEGER NOT NULL DEFAULT 1,
+  mustChangePassword INTEGER NOT NULL DEFAULT 0,
+  lastLoginAt TEXT,
+  createdBy INTEGER,
   createdAt TEXT NOT NULL,
-  updatedAt TEXT NOT NULL
+  updatedAt TEXT NOT NULL,
+  FOREIGN KEY (createdBy) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS settings (
@@ -156,34 +164,16 @@ CREATE TABLE IF NOT EXISTS purchase_order_items (
 );
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- LICENSE / SUBSCRIPTION EXPIRY TABLE  (Requirement 2)
+-- AUDIT LOG TABLE
 -- ─────────────────────────────────────────────────────────────────────────────
--- Controls whether any user can log in. Admin manually updates expiry_date
--- via SQL tool to extend the subscription. No frontend bypass is possible
--- because the check happens server-side before the JWT is issued.
---
--- Example: INSERT INTO license_expiry (expiry_date, status) VALUES ('2026-05-24', 'active');
--- Example: UPDATE license_expiry SET expiry_date = '2026-07-24' WHERE id = 1;
-CREATE TABLE IF NOT EXISTS license_expiry (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  expiry_date TEXT NOT NULL,    -- ISO date string: 'YYYY-MM-DD'
-  status      TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','inactive')),
-  note        TEXT,             -- optional admin note (e.g. "Extended 2 months")
-  createdAt   TEXT NOT NULL,
-  updatedAt   TEXT NOT NULL
+CREATE TABLE IF NOT EXISTS audit_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  userId INTEGER,
+  action TEXT NOT NULL,
+  details TEXT,
+  createdAt TEXT NOT NULL,
+  FOREIGN KEY (userId) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- ─────────────────────────────────────────────────────────────────────────────
--- MIGRATION SCRIPTS — run these on existing databases to add new columns
--- (safe to run multiple times — SQLite will error on duplicate, catch in app)
--- ─────────────────────────────────────────────────────────────────────────────
--- ALTER TABLE sale_items ADD COLUMN productDiscount REAL NOT NULL DEFAULT 0;
--- ALTER TABLE sale_items ADD COLUMN discountAmount REAL NOT NULL DEFAULT 0;
--- ALTER TABLE sale_items ADD COLUMN extraDiscount REAL NOT NULL DEFAULT 0;
--- ALTER TABLE sale_items ADD COLUMN extraDiscountAmount REAL NOT NULL DEFAULT 0;
--- ALTER TABLE sale_items ADD COLUMN packagingUnit TEXT NOT NULL DEFAULT 'unit';
--- ALTER TABLE sales ADD COLUMN billDiscount REAL NOT NULL DEFAULT 0;
--- ALTER TABLE sales ADD COLUMN amountPaid REAL;
--- ALTER TABLE sales ADD COLUMN balanceDue REAL NOT NULL DEFAULT 0;
--- ALTER TABLE sales ADD COLUMN prevBalance REAL NOT NULL DEFAULT 0;
--- ALTER TABLE customers ADD COLUMN balance REAL NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS idx_audit_log_createdAt ON audit_log(createdAt);
+CREATE INDEX IF NOT EXISTS idx_audit_log_userId ON audit_log(userId);

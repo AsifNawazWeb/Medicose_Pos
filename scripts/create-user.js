@@ -9,9 +9,10 @@ const email = process.argv[2];
 const password = process.argv[3];
 const name = process.argv[4] || 'New User';
 const role = process.argv[5] || 'cashier';
+const username = process.argv[6] || email.split('@')[0];
 
 if (!email || !password) {
-  console.log("Usage: npm run create-user <email> <password> [name] [role]");
+  console.log("Usage: npm run create-user <email> <password> [name] [role] [username]");
   process.exit(1);
 }
 
@@ -20,13 +21,15 @@ const now = new Date().toISOString();
 
 try {
   db.prepare(`
-    INSERT INTO users (email, name, role, passwordHash, createdAt, updatedAt)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(email, name, role, passwordHash, now, now);
+    INSERT INTO users (email, username, name, role, passwordHash, isActive, mustChangePassword, createdAt, updatedAt)
+    VALUES (?, ?, ?, ?, ?, 1, 1, ?, ?)
+  `).run(email, username, name, role, passwordHash, now, now);
   console.log(`✅ User created successfully!`);
   console.log(`- Email: ${email}`);
+  console.log(`- Username: ${username}`);
   console.log(`- Name: ${name}`);
   console.log(`- Role: ${role}`);
+  console.log(`- Must change password on first login: Yes`);
 } catch (err) {
   console.error("❌ Failed to create user:", err.message);
 }
