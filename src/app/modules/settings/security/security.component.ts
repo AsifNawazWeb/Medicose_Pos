@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
@@ -10,14 +11,23 @@ import { ToastService } from '../../../core/services/toast.service';
 export class SecurityComponent {
   loading = false;
   form: any;
+  backRoute = '/dashboard';
 
-  
-
-  constructor(private fb: FormBuilder, private api: ApiService, private toast: ToastService) {
+  constructor(
+    private fb: FormBuilder,
+    private api: ApiService,
+    private auth: AuthService,
+    private toast: ToastService
+  ) {
     this.form = this.fb.group({
-    currentPassword: ['', [Validators.required, Validators.minLength(6)]],
-    newPassword: ['', [Validators.required, Validators.minLength(8)]],
-  });
+      currentPassword: ['', [Validators.required, Validators.minLength(6)]],
+      newPassword: ['', [Validators.required, Validators.minLength(8)]],
+    });
+
+    // Admins can go back to settings; other roles go to dashboard
+    if (this.auth.hasRole('admin')) {
+      this.backRoute = '/settings';
+    }
   }
 
   save() {

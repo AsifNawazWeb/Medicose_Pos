@@ -24,6 +24,9 @@ const routes: Routes = [
       { path: 'reports', loadChildren: () => import('./modules/reports/reports.module').then(m => m.ReportsModule), canActivate: [roleGuard('admin', 'manager', 'viewer')] },
       { path: 'returns', loadChildren: () => import('./modules/returns/returns.module').then(m => m.ReturnsModule), canActivate: [roleGuard('admin', 'manager', 'cashier')] },
       { path: 'purchase-orders', loadChildren: () => import('./modules/purchase-orders/purchase-orders.module').then(m => m.PurchaseOrdersModule), canActivate: [roleGuard('admin', 'manager')] },
+      // Security is accessible to ALL authenticated users (any role can change their own password)
+      { path: 'settings/security', loadChildren: () => import('./modules/settings/settings.module').then(m => m.SettingsModule) },
+      // Settings (admin only) — must come AFTER settings/security so the more specific route matches first
       { path: 'settings', loadChildren: () => import('./modules/settings/settings.module').then(m => m.SettingsModule), canActivate: [roleGuard('admin')] },
     ],
   },

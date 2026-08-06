@@ -1,6 +1,13 @@
 <div class="wrap">
+  <!-- Full-screen background image with dark overlay -->
+  <div class="bg-layer"></div>
+
+  <!-- Centered login card -->
   <mat-card class="card surface" role="region" aria-label="Login form">
     <mat-card-header>
+      <div class="logo">
+        <mat-icon>local_pharmacy</mat-icon>
+      </div>
       <mat-card-title>Welcome back</mat-card-title>
       <mat-card-subtitle>Sign in with your email or username</mat-card-subtitle>
     </mat-card-header>
@@ -10,12 +17,14 @@
         <mat-form-field appearance="outline" class="full">
           <mat-label>Email or Username</mat-label>
           <input matInput formControlName="login" autocomplete="username" placeholder="name@example.com or username" required />
+          <mat-icon matPrefix>person</mat-icon>
           <mat-error *ngIf="form.controls.login.invalid">Enter your email or username</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full">
           <mat-label>Password</mat-label>
           <input matInput [type]="hide ? 'password' : 'text'" formControlName="password" autocomplete="current-password" placeholder="Enter your password" required />
+          <mat-icon matPrefix>lock</mat-icon>
           <button mat-icon-button matSuffix (click)="hide = !hide" [attr.aria-label]="'Hide password'" [attr.aria-pressed]="hide" type="button">
             <mat-icon>{{hide ? 'visibility_off' : 'visibility'}}</mat-icon>
           </button>
