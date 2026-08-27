@@ -2,7 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
+import { UpdateService, UpdateState } from '../../core/services/update.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -13,14 +15,23 @@ export class SettingsComponent implements OnInit {
   loading = false;
   backupLoading = false;
   restoreLoading = false;
+  updateChecking = false;
+  updateState: UpdateState = { status: 'idle' };
   form: any;
 
   constructor(
     private fb: FormBuilder,
     private api: ApiService,
     private toast: ToastService,
-    private http: HttpClient
+    private http: HttpClient,
+    public auth: AuthService,
+    private updates: UpdateService
   ) {
+    this.updates.state$.subscribe(s => {
+      this.updateState = s;
+      if (s.status !== 'checking') this.updateChecking = false;
+    });
+
     this.form = this.fb.group({
       storeName: ['', [Validators.required, Validators.minLength(2)]],
       storePhone: [''],
@@ -86,6 +97,24 @@ export class SettingsComponent implements OnInit {
         this.backupLoading = false;
       },
     });
+  }
+
+  checkForUpdates() {
+    this.updateChecking = true;
+    this.updates.check().then(s => {
+      this.updateChecking = false;
+      if (s.status === 'disabled') {
+        this.toast.info('Updates are only available in the installed desktop app');
+      } else if (s.status === 'not-available') {
+        this.toast.success("You're on the latest version");
+      } else if (s.status === 'error') {
+        this.toast.error(s.error || 'Update check failed');
+      }
+    });
+  }
+
+  installUpdate() {
+    this.updates.install();
   }
 
   onRestoreFileSelected(event: Event) {

@@ -69,3 +69,37 @@
     </div>
   </mat-card-content>
 </mat-card>
+
+<mat-card class="surface panel">
+  <mat-card-title>Application Updates</mat-card-title>
+  <mat-card-content>
+    <p class="backup-desc">
+      Check for new versions of the application. Current version: <strong>v{{ auth.version }}</strong>.
+    </p>
+    <div class="backup-actions">
+      <button mat-raised-button color="primary" (click)="checkForUpdates()"
+        [disabled]="updateChecking || updateState.status === 'downloading' || updateState.status === 'downloaded'">
+        <mat-icon>{{ updateChecking ? 'hourglass_empty' : 'system_update' }}</mat-icon>
+        {{ updateChecking ? 'Checking...' : 'Check for Updates' }}
+      </button>
+
+      <button mat-stroked-button color="warn" *ngIf="updateState.status === 'downloaded'" (click)="installUpdate()">
+        <mat-icon>restart_alt</mat-icon>
+        Restart & Install
+      </button>
+    </div>
+
+    <p class="update-status" *ngIf="updateState.status === 'available'">
+      Update v{{ updateState.version }} found — downloading…
+    </p>
+    <p class="update-status" *ngIf="updateState.status === 'downloading'">
+      Downloading update… {{ updateState.percent || 0 }}%
+    </p>
+    <p class="update-status text-success" *ngIf="updateState.status === 'downloaded'">
+      Update v{{ updateState.version }} ready. Restart to install.
+    </p>
+    <p class="update-status text-danger" *ngIf="updateState.status === 'error'">
+      {{ updateState.error }}
+    </p>
+  </mat-card-content>
+</mat-card>

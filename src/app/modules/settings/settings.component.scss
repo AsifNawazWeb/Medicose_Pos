@@ -25,6 +25,15 @@
   font-style: italic;
 }
 
+.update-status {
+  margin-top: 12px;
+  color: #666;
+  line-height: 1.5;
+
+  &.text-danger { color: #d32f2f; }
+  &.text-success { color: #2e7d32; }
+}
+
 @media (max-width: 900px){
   .grid2{ grid-template-columns: 1fr; }
 }

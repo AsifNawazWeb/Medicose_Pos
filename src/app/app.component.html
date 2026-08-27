@@ -52,12 +52,35 @@
 
     <!-- Footer -->
     <div class="foot">
-      <div class="muted">v{{ auth.version }}</div>
+      <div class="muted version-btn" (click)="checkForUpdates()" matTooltip="Check for updates">v{{ auth.version }}</div>
       <div class="badge">PRO</div>
     </div>
   </mat-sidenav>
 
   <mat-sidenav-content class="content">
+    <!-- Update Banner -->
+    <div class="update-banner" *ngIf="showUpdateBanner">
+      <mat-icon>{{ updateState.status === 'downloaded' ? 'system_update_alt' : (updateState.status === 'downloading' ? 'downloading' : 'update') }}</mat-icon>
+      <div class="update-text">
+        <ng-container *ngIf="updateState.status === 'available'">
+          <span><strong>Update v{{ updateState.version }}</strong> available — downloading…</span>
+        </ng-container>
+        <ng-container *ngIf="updateState.status === 'downloading'">
+          <span><strong>Downloading update v{{ updateState.version }}</strong>… {{ updateState.percent || 0 }}%</span>
+          <mat-progress-bar mode="determinate" [value]="updateState.percent || 0"></mat-progress-bar>
+        </ng-container>
+        <ng-container *ngIf="updateState.status === 'downloaded'">
+          <span><strong>Update v{{ updateState.version }}</strong> ready — restart to install.</span>
+        </ng-container>
+      </div>
+      <div class="update-actions">
+        <button mat-raised-button *ngIf="updateState.status === 'downloaded'" (click)="installUpdate()">
+          <mat-icon>restart_alt</mat-icon> Restart & Install
+        </button>
+        <button mat-stroked-button (click)="dismissUpdate()">Later</button>
+      </div>
+    </div>
+
     <!-- Top Toolbar -->
     <mat-toolbar class="top" role="banner" *ngIf="!isAuthPage">
       <span class="spacer"></span>

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, map } from 'rxjs';
+import type { UpdateState } from './update.service';
 
 export type Role = 'admin' | 'manager' | 'cashier' | 'viewer';
 
@@ -20,6 +21,12 @@ declare global {
       getVersion: () => Promise<string>;
       openExternal: (url: string) => Promise<boolean>;
       printReceipt: (html: string, options?: any) => Promise<{success: boolean; failureReason?: string | null}>;
+      update?: {
+        check: () => Promise<UpdateState>;
+        getState: () => Promise<UpdateState>;
+        install: () => Promise<boolean>;
+        onStatus: (cb: (state: UpdateState) => void) => () => void;
+      };
     };
   }
 }

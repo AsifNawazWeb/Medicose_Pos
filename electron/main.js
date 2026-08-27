@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -100,22 +100,99 @@ function createWindow() {
   });
 }
 
-// Auto updater logging
-autoUpdater.on('checking-for-update', () => console.log('[auto-updater] Checking for update...'));
-autoUpdater.on('update-available', (info) => console.log('[auto-updater] Update available:', info.version));
-autoUpdater.on('update-not-available', () => console.log('[auto-updater] Update not available.'));
-autoUpdater.on('error', (err) => console.error('[auto-updater] Error:', err));
-autoUpdater.on('download-progress', (progress) => console.log(`[auto-updater] Downloaded ${progress.percent}%`));
-autoUpdater.on('update-downloaded', () => console.log('[auto-updater] Update downloaded'));
+// ─── Auto Updater ─────────────────────────────────────────────────────────────
+// Download in the background as soon as an update is available, then let the
+// UI (and a native notification) prompt the user to restart and install.
+autoUpdater.autoDownload = true;
+
+// Dev/test mode: set MEDPOS_UPDATE_URL to a folder served over HTTP that contains
+// latest.yml + the installer (e.g. the `release/` dir from `npm run build-win`).
+// This lets you exercise the full check/download/notify flow locally without
+// publishing to GitHub. See docs/UPDATE_TESTING.md.
+const updateTestUrl = process.env.MEDPOS_UPDATE_URL || null;
+const isUpdateEnabled = !isDev || !!updateTestUrl;
+
+if (updateTestUrl) {
+  autoUpdater.forceDevUpdateConfig = true; // allow electron-updater to run unpackaged
+  autoUpdater.setFeedURL(updateTestUrl);   // generic provider pointing at the local server
+}
+
+let updateState = { status: 'idle', version: null, percent: 0, error: null };
+let updateBusy  = false;
+
+function sendUpdateStatus() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update:status', updateState);
+  }
+}
+
+function setUpdateState(patch) {
+  updateState = { ...updateState, ...patch };
+  sendUpdateStatus();
+}
+
+function notifyUpdate(body) {
+  if (!Notification.isSupported()) return;
+  const n = new Notification({ title: 'Medical POS — Update', body });
+  n.on('click', () => {
+    try { autoUpdater.quitAndInstall(); } catch (_) {}
+  });
+  n.show();
+}
+
+autoUpdater.on('checking-for-update', () => {
+  setUpdateState({ status: 'checking' });
+});
+
+autoUpdater.on('update-available', (info) => {
+  updateBusy = false;
+  setUpdateState({ status: 'available', version: info?.version || null, percent: 0, error: null });
+  notifyUpdate(`Version ${info?.version || ''} is available. Downloading in the background...`);
+});
+
+autoUpdater.on('update-not-available', () => {
+  updateBusy = false;
+  setUpdateState({ status: 'not-available', error: null });
+});
+
+autoUpdater.on('download-progress', (p) => {
+  setUpdateState({ status: 'downloading', percent: Math.round(p?.percent || 0) });
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  updateBusy = false;
+  setUpdateState({ status: 'downloaded', version: info?.version || null, percent: 100, error: null });
+  notifyUpdate(`Version ${info?.version || ''} is ready. Click to restart and install.`);
+});
+
+autoUpdater.on('error', (err) => {
+  updateBusy = false;
+  setUpdateState({ status: 'error', error: err?.message || 'Update check failed' });
+});
+
+function checkForUpdates() {
+  if (!isUpdateEnabled || updateBusy) return Promise.resolve(updateState);
+  updateBusy = true;
+  setUpdateState({ status: 'checking' });
+  return autoUpdater.checkForUpdates()
+    .then(() => updateState)
+    .catch((err) => {
+      updateBusy = false;
+      setUpdateState({ status: 'error', error: err?.message || 'Update check failed' });
+      return updateState;
+    });
+}
 
 app.whenReady().then(async () => {
   if (!isDev) {
     try { await startBackend(); }
     catch (e) { console.error('[main] backend failed to start:', e); }
-    
-    // Check for updates if running in production
-    autoUpdater.checkForUpdatesAndNotify();
   }
+
+  // Silently check for updates in the background on startup
+  // (packaged app, or dev when MEDPOS_UPDATE_URL test mode is enabled)
+  if (isUpdateEnabled) checkForUpdates();
+
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -135,6 +212,14 @@ ipcMain.handle('app:openExternal', async (_evt, url) => {
   await shell.openExternal(url);
   return true;
 });
+ipcMain.handle('update:check',    () => (!isUpdateEnabled ? { status: 'disabled' } : checkForUpdates()));
+ipcMain.handle('update:getState', () => (!isUpdateEnabled ? { status: 'disabled' } : updateState));
+ipcMain.handle('update:install', () => {
+  if (!isUpdateEnabled) return false;
+  try { autoUpdater.quitAndInstall(); return true; }
+  catch (_) { return false; }
+});
+
 ipcMain.handle('print:receipt', async (_evt, html, options = {}) => {
   const silent = options?.silent !== false; // default to silent (direct print)
 
